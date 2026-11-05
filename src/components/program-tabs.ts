@@ -9,10 +9,11 @@ export function renderTabs(
   active: number,
   onSelect: (index: number) => void,
   dirty: readonly boolean[] = [],
+  disabled = false,
 ): TemplateResult {
   const onKey = (e: KeyboardEvent) => {
     const delta = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-    if (!delta) return;
+    if (!delta || disabled) return;
     e.preventDefault();
     const next = (active + delta + programs.length) % programs.length;
     onSelect(next);
@@ -27,6 +28,7 @@ export function renderTabs(
           role="tab"
           aria-selected=${i === active ? "true" : "false"}
           tabindex=${i === active ? 0 : -1}
+          ?disabled=${disabled}
           title=${statuses[i] === "missing"
             ? `${p.name}: ${UI.status.missing}`
             : dirty[i]

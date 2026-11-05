@@ -65,6 +65,28 @@ export const cardStyles = css`
   .status.missing {
     background: var(--etp-error);
   }
+  .status.busy {
+    background: var(--etp-busy);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .status.busy {
+      animation: etp-pulse 1.2s ease-in-out infinite;
+    }
+    .spinner {
+      animation: etp-spin 0.9s linear infinite;
+    }
+  }
+  @keyframes etp-pulse {
+    50% {
+      opacity: 0.35;
+      transform: scale(1.3);
+    }
+  }
+  @keyframes etp-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 
   /* ---------- tabs ---------- */
   .tabs {
@@ -87,6 +109,12 @@ export const cardStyles = css`
   .tab[aria-selected="true"] {
     color: var(--etp-text);
     border-bottom-color: var(--etp-accent);
+  }
+  .tab:disabled {
+    cursor: not-allowed;
+  }
+  .tab:disabled:not([aria-selected="true"]) {
+    opacity: 0.45;
   }
   .tab.unavailable {
     opacity: 0.45;
@@ -138,6 +166,14 @@ export const cardStyles = css`
   }
   .section {
     padding: 12px 16px;
+  }
+  /* locked while writing (PLAN.md §2.4); the areas are also inert */
+  .body.busy .area-days,
+  .body.busy .area-slots,
+  .body.busy .area-preview {
+    opacity: 0.45;
+    pointer-events: none;
+    user-select: none;
   }
   .section + .section {
     border-top: 1px solid var(--etp-divider);
@@ -450,6 +486,86 @@ export const cardStyles = css`
   }
   .dry-list li {
     margin-bottom: 6px;
+  }
+
+  /* ---------- busy panel ---------- */
+  .busy-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-weight: 500;
+  }
+  .busy-title.ok {
+    color: var(--etp-ok);
+  }
+  .busy-title.error {
+    color: var(--etp-error);
+  }
+  .busy-count {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--etp-muted);
+  }
+  .busy-reason {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
+  }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--etp-busy);
+    border-right-color: transparent;
+    flex: none;
+  }
+  .progress {
+    height: 6px;
+    margin: 10px 0 4px;
+    border-radius: 3px;
+    background: var(--etp-surface-2);
+    overflow: hidden;
+  }
+  .progress span {
+    display: block;
+    height: 100%;
+    background: var(--etp-busy);
+    transition: width 200ms;
+  }
+  .job-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9rem;
+  }
+  .job-day {
+    color: var(--etp-muted);
+  }
+  .job-day.writing,
+  .job-day.verifying {
+    color: var(--etp-busy);
+  }
+  .job-day.done {
+    color: var(--etp-ok);
+  }
+  .job-day.failed {
+    color: var(--etp-error);
+    font-weight: 500;
+  }
+  .btn-group {
+    display: flex;
+    gap: 8px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   /* ---------- sheets (native modal dialog) ---------- */

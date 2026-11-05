@@ -26,6 +26,8 @@ export interface CardConfig {
   accent?: string;
   /** Entity with the Z1 set-back temperature shown in the info text (default: the Z1NightTemp sensor). */
   setback_entity?: string;
+  /** Seconds to wait per day for the controller to confirm a write (default 30). */
+  verify_timeout?: number;
 }
 
 export interface ResolvedProgram {
@@ -46,6 +48,7 @@ export interface ResolvedConfig {
   accent: string | null;
   /** null = derive from the entity template (`Z1NightTemp`). */
   setbackEntity: string | null;
+  verifyTimeout: number;
 }
 
 export const DEFAULTS = {
@@ -104,6 +107,7 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     showPreview: config.show_preview ?? true,
     accent: config.accent ?? null,
     setbackEntity: config.setback_entity ?? null,
+    verifyTimeout: config.verify_timeout ?? 30,
   };
 }
 

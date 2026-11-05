@@ -6,8 +6,8 @@ import { MAX_SLOTS } from "../model/programs.js";
 import { DAYS, type Day, type ProgramSpec, type Slot } from "../model/types.js";
 
 /** Field sensor names created by ebusd's HA discovery (PLAN.md §8). */
-const FIELD = { start: "htm", end: "htm_1", temp: "slottemp" } as const;
-const countField = (dayIndex: number) => (dayIndex === 0 ? "slotcount" : `slotcount_${dayIndex}`);
+export const FIELD = { start: "htm", end: "htm_1", temp: "slottemp" } as const;
+export const countField = (dayIndex: number) => (dayIndex === 0 ? "slotcount" : `slotcount_${dayIndex}`);
 
 export type ReadStatus = "ok" | "loading" | "missing";
 

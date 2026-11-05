@@ -92,10 +92,40 @@ export const UI = {
   slotsRemoved: (n: number) => (n === 1 ? "1 slot removed" : `${n} slots removed`),
   discard: "Discard",
   applyTo: (n: number) => `Apply to ${n === 1 ? "1 day" : `${n} days`}`,
-  dryRunTitle: "Dry run – nothing was sent",
-  dryRunHelp: "Writing to the controller comes in the next version. These messages would be published, in this order:",
   close: "Close",
-  footnote: "Apply is a dry run in this version – nothing is written to the controller yet.",
+  // write job (busy panel)
+  writing: (program: string) => `Writing ${program} …`,
+  restoring: (program: string) => `Restoring ${program} …`,
+  progress: (done: number, total: number) => `${done} / ${total}`,
+  dayState: {
+    queued: "waiting",
+    writing: "writing",
+    verifying: "verifying",
+    done: "done",
+    failed: "failed",
+    skipped: "not written",
+  },
+  cancelAfterDay: "Cancel after this day",
+  cancelling: "Stopping after this day …",
+  saved: (days: string, n: number) => `Saved to ${days} (${n === 1 ? "1 day" : `${n} days`}) – confirmed by the controller`,
+  restored: "Previous program restored",
+  failedAt: (day: string) => `Write stopped at ${day}`,
+  cancelled: "Write cancelled",
+  cancelledHelp: (written: string) => (written ? `Already written: ${written}.` : "No day was written."),
+  reason: {
+    count: (actual: number, expected: number) => `Controller reports ${actual} slot(s), expected ${expected}`,
+    slot: (index: number, actual: string, expected: string) =>
+      `Slot ${index + 1}: controller has ${actual}, expected ${expected}`,
+    timeout: (s: number) => `No confirmation from the controller within ${s} s`,
+    publish: (message: string) => `Could not publish to MQTT: ${message}`,
+  },
+  restorePrevious: "Restore previous",
+  retry: "Retry",
+  continueWrite: "Continue",
+  noMqtt: "This Home Assistant connection cannot call services (mqtt.publish).",
+  otherCardBusy: "Another card is writing to the controller right now. Try again when it has finished.",
+  leaveWarning: "The time program is still being written. Leaving now may leave days unchanged.",
+  busyStatus: "Writing to the controller …",
 } as const;
 
 export function issueMessage(issue: Issue): string {

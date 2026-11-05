@@ -11,6 +11,8 @@ export interface ApplyBarProps {
   /** slotDeltas(): only days whose slot count changes. */
   deltas: readonly SlotDelta[];
   dirty: boolean;
+  /** Error that is not a validation issue, e.g. no service access. */
+  notice?: string | null;
   onDiscard: () => void;
   onApply: () => void;
 }
@@ -27,7 +29,7 @@ function deltaText(deltas: readonly SlotDelta[], plan: WritePlan): string {
     .join(" · ");
 }
 
-export function renderApplyBar({ plan, errors, deltas, dirty, onDiscard, onApply }: ApplyBarProps): TemplateResult {
+export function renderApplyBar({ plan, errors, deltas, dirty, notice, onDiscard, onApply }: ApplyBarProps): TemplateResult {
   const n = plan.write.length;
   const blocked = errors.length > 0 || n === 0;
   const selectionError = errors.find((e) => e.slot === undefined);
@@ -43,34 +45,10 @@ export function renderApplyBar({ plan, errors, deltas, dirty, onDiscard, onApply
       : nothing}
     ${selectionError ? html`<p class="issue error">${issueMessage(selectionError)}</p>` : nothing}
     ${slotErrors ? html`<p class="issue error">${UI.errors(slotErrors)}</p>` : nothing}
+    ${notice ? html`<p class="issue error" role="alert">${notice}</p>` : nothing}
     <div class="apply-actions">
       ${dirty ? html`<button class="btn" @click=${onDiscard}>${UI.discard}</button>` : html`<span></span>`}
       <button class="btn primary" ?disabled=${blocked} @click=${onApply}>✓ ${UI.applyTo(n)}</button>
-    </div>
-  </div>`;
-}
-
-export interface DryRunEntry {
-  day: Day;
-  topic: string;
-  payloads: string[];
-}
-
-export function renderDryRun(entries: readonly DryRunEntry[], onClose: () => void): TemplateResult {
-  return html`<div class="apply-bar dry-run" role="status">
-    <p class="apply-summary"><strong>${UI.dryRunTitle}</strong></p>
-    <p class="muted small">${UI.dryRunHelp}</p>
-    <ol class="mono dry-list">
-      ${entries.map(
-        (e) => html`<li>
-          <span class="muted">${UI.dayLong[e.day]}</span> → <code>${e.topic}</code>
-          ${e.payloads.map((pl) => html`<br /><code>${pl}</code>`)}
-        </li>`,
-      )}
-    </ol>
-    <div class="apply-actions">
-      <span></span>
-      <button class="btn" @click=${onClose}>${UI.close}</button>
     </div>
   </div>`;
 }

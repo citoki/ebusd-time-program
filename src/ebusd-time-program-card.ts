@@ -1,37 +1,42 @@
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { programFingerprint, readProgram, type ProgramRead } from "./adapters/mqtt.js";
-import { renderApplyBar, renderDryRun, type DryRunEntry } from "./components/apply-bar.js";
+import { renderApplyBar } from "./components/apply-bar.js";
+import { renderBusyPanel } from "./components/busy-panel.js";
 import { renderDayPicker, selectionLabel } from "./components/day-picker.js";
 import { renderTabs } from "./components/program-tabs.js";
 import { renderSheet, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview } from "./components/week-preview.js";
-import { resolveConfig, setbackEntityId, topic, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
+import { resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { ISSUE_MESSAGES, UI } from "./i18n/en.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
-import { buildDayPayloads, writeMessage } from "./model/payload.js";
 import { MAX_SLOTS } from "./model/programs.js";
 import { fromMinutes, toMinutes } from "./model/time.js";
 import { DAYS, type Day, type ProgramSpec, type Slot, type Week } from "./model/types.js";
 import { validateDay, validateSelection, type Issue } from "./model/validate.js";
 import {
-
   draftForSelection,
   orderDays,
   planWrite,
   slotDeltas,
   PRESETS,
-
   toggleDay,
   type Preset,
   type SelectionDraft,
   type WritePlan,
 } from "./model/week.js";
 import { cardStyles } from "./styles.js";
+import { restoreItems, retryItems, WriteJob, type JobKind, type JobSnapshot } from "./write-job.js";
 
 export const CARD_TAG = "ebusd-time-program-card";
-export const CARD_VERSION = "0.2.0";
+
+/**
+ * Cards on the same page share the bus: only one write job at a time across
+ * all instances (two cards could otherwise interleave slot writes).
+ */
+let pageJobOwner: object | null = null;
+export const CARD_VERSION = "0.3.0";
 
 /** Everything the editor needs for the active program, derived from state. */
 interface EditorContext {
@@ -61,7 +66,8 @@ export class EbusdTimeProgramCard extends LitElement {
     _reads: { state: true },
     _drafts: { state: true },
     _sheet: { state: true },
-    _dryRun: { state: true },
+    _job: { state: true },
+    _notice: { state: true },
     _infoOpen: { state: true },
     _setback: { state: true },
   };
@@ -73,7 +79,10 @@ export class EbusdTimeProgramCard extends LitElement {
   /** Unsaved draft per program (tab); undefined = follow the controller values. */
   declare _drafts: (Slot[] | undefined)[];
   declare _sheet: SheetState | null;
-  declare _dryRun: DryRunEntry[] | null;
+  /** Current or last write job (null = none / closed). */
+  declare _job: JobSnapshot | null;
+  /** One-off error shown in the apply bar (e.g. no service access). */
+  declare _notice: string | null;
   declare _infoOpen: boolean;
   /** Z1 set-back temperature from HA, for the info text (null = unknown). */
   declare _setback: number | null;
@@ -81,6 +90,9 @@ export class EbusdTimeProgramCard extends LitElement {
   private _cfg: ResolvedConfig | undefined;
   private _hass: Hass | undefined;
   private _fingerprint = "";
+  private _runner: WriteJob | null = null;
+  /** Resolvers of the running job waiting for the next hass update. */
+  private _waiters: (() => void)[] = [];
 
   constructor() {
     super();
@@ -90,7 +102,8 @@ export class EbusdTimeProgramCard extends LitElement {
     this._reads = [];
     this._drafts = [];
     this._sheet = null;
-    this._dryRun = null;
+    this._job = null;
+    this._notice = null;
     this._infoOpen = false;
     this._setback = null;
   }
@@ -104,7 +117,7 @@ export class EbusdTimeProgramCard extends LitElement {
     this._source = undefined;
     this._drafts = [];
     this._sheet = null;
-    this._dryRun = null;
+    this._job = null;
     this._fingerprint = "";
     this._refresh();
   }
@@ -112,7 +125,30 @@ export class EbusdTimeProgramCard extends LitElement {
   set hass(hass: Hass) {
     this._hass = hass;
     this._refresh();
+    const waiters = this._waiters;
+    this._waiters = [];
+    waiters.forEach((w) => w());
   }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener("beforeunload", this._onBeforeUnload);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.removeEventListener("beforeunload", this._onBeforeUnload);
+  }
+
+  private get _busy(): boolean {
+    return this._job?.status === "running";
+  }
+
+  private _onBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (!this._busy) return;
+    e.preventDefault();
+    e.returnValue = UI.leaveWarning; // legacy browsers show/require it
+  };
 
   getCardSize(): number {
     return 10;
@@ -170,13 +206,12 @@ export class EbusdTimeProgramCard extends LitElement {
     }
     drafts[this._active] = slots;
     this._drafts = drafts;
-    this._dryRun = null;
+    this._notice = null;
   }
 
   private _setSelection(days: Day[]): void {
     this._selected = orderDays(days);
     this._source = undefined;
-    this._dryRun = null;
   }
 
   private _onToggle = (day: Day) => this._setSelection(toggleDay(this._selected, day));
@@ -185,7 +220,6 @@ export class EbusdTimeProgramCard extends LitElement {
   private _onTab = (index: number) => {
     this._active = index;
     this._source = undefined;
-    this._dryRun = null;
   };
 
   private _onEdit = (index: number, field: SlotField) => {
@@ -237,19 +271,84 @@ export class EbusdTimeProgramCard extends LitElement {
     this._setDraft(undefined);
   };
 
-  /** Phase 3: show what would be published instead of writing (writing is Phase 4). */
+  // ---------- writing (PLAN.md §2.3/§2.4) ----------
+
   private _onApply = () => {
     const cfg = this._cfg;
-    if (!cfg) return;
-    const { plan, errors, spec } = this._context(cfg);
+    if (!cfg || this._busy) return;
+    const { plan, errors, week } = this._context(cfg);
     if (errors.length || plan.write.length === 0) return;
-    const payloads = buildDayPayloads(spec, plan.slots);
-    this._dryRun = plan.write.map((day) => ({
-      day,
-      topic: topic(cfg, writeMessage(spec, day), "set"),
-      payloads,
-    }));
+    const previous = Object.fromEntries(plan.write.map((d) => [d, week[d]]));
+    void this._startJob("apply", plan.write.map((day) => ({ day, slots: plan.slots })), previous);
   };
+
+  private _onRetry = () => {
+    const job = this._job;
+    if (job) void this._startJob(job.kind === "restore" ? "restore" : "retry", retryItems(job), job.previous);
+  };
+
+  private _onRestore = () => {
+    const job = this._job;
+    if (job) void this._startJob("restore", restoreItems(job), job.previous);
+  };
+
+  private _onCancelJob = () => this._runner?.cancel();
+  private _onCloseJob = () => {
+    this._job = null;
+  };
+
+  private async _startJob(kind: JobKind, items: { day: Day; slots: Slot[] }[], previous: JobSnapshot["previous"]) {
+    const cfg = this._cfg;
+    const hass = this._hass;
+    if (!cfg || !hass || items.length === 0) return;
+    if (!hass.callService) {
+      this._notice = UI.noMqtt;
+      return;
+    }
+    if (pageJobOwner && pageJobOwner !== this) {
+      this._notice = UI.otherCardBusy;
+      return;
+    }
+    pageJobOwner = this;
+    const program = this._active;
+    const spec = cfg.programs[program]!.spec;
+    const countMessage = this._reads[program]?.countMessage ?? cfg.countMessage ?? "Timeframes";
+    this._sheet = null;
+    this._notice = null;
+    const runner = new WriteJob(
+      { kind, program, items, previous },
+      { cfg, spec, countMessage, verifyTimeoutMs: cfg.verifyTimeout * 1000 },
+      {
+        publish: async (topic, payload) => {
+          await this._hass!.callService!("mqtt", "publish", { topic, payload });
+        },
+        readDay: (day) => (this._hass ? readProgram(this._hass, cfg, spec).days[day] : null),
+        waitForUpdate: (ms) =>
+          new Promise<void>((resolve) => {
+            const timer = setTimeout(resolve, ms);
+            this._waiters.push(() => {
+              clearTimeout(timer);
+              resolve();
+            });
+          }),
+        now: () => Date.now(),
+      },
+      (snapshot) => (this._job = snapshot),
+    );
+    this._runner = runner;
+    this._job = runner.snapshot;
+    const result = await runner.run().finally(() => {
+      if (pageJobOwner === this) pageJobOwner = null;
+    });
+    this._runner = null;
+    // success: the controller now has the draft, so it is not unsaved any more
+    if (result.status === "done" && kind !== "restore") {
+      const drafts = [...this._drafts];
+      drafts[program] = undefined;
+      this._drafts = drafts;
+      this._source = undefined;
+    }
+  }
 
   // ---------- render ----------
 
@@ -265,13 +364,18 @@ export class EbusdTimeProgramCard extends LitElement {
     const cfg = this._cfg;
     if (!cfg) return nothing;
     const read = this._reads[this._active];
-    const status = read?.status ?? "loading";
+    const status = this._busy ? "busy" : (read?.status ?? "loading");
     const style = cfg.accent ? `--etp-accent:${cfg.accent}` : "";
 
     return html`<ha-card style=${style}>
       <div class="header">
         <h2 class="title">${cfg.title}</h2>
-        <span class="status ${status}" role="img" aria-label=${UI.status[status]} title=${UI.status[status]}></span>
+        <span
+          class="status ${status}"
+          role="img"
+          aria-label=${status === "busy" ? UI.busyStatus : UI.status[status]}
+          title=${status === "busy" ? UI.busyStatus : UI.status[status]}
+        ></span>
       </div>
       ${renderTabs(
         cfg.programs,
@@ -279,9 +383,9 @@ export class EbusdTimeProgramCard extends LitElement {
         this._active,
         this._onTab,
         cfg.programs.map((_, i) => this._drafts[i] !== undefined),
+        this._busy,
       )}
       ${read?.status === "missing" ? this._renderMissing(read) : this._renderBody(cfg)}
-      <div class="footnote">${UI.footnote}</div>
     </ha-card>`;
   }
 
@@ -301,16 +405,17 @@ export class EbusdTimeProgramCard extends LitElement {
     const { program, spec, slots, loading, dirty, plan } = ctx;
     const selected = this._selected;
     const showEditor = selected.length > 0 || dirty;
-    const showBar = !loading && (dirty || plan.write.length > 0);
+    const busy = this._busy;
+    const showBar = this._job !== null || (!loading && (dirty || plan.write.length > 0));
     // the preview shows the draft on the days it would be written to
     const previewDays: ProgramRead["days"] = { ...ctx.days };
     if (dirty) for (const d of plan.write) previewDays[d] = plan.slots;
 
-    return html`<div class="body">
-        <div class="area-days">
+    return html`<div class="body ${busy ? "busy" : ""}">
+        <div class="area-days" ?inert=${busy}>
           ${renderDayPicker({ selected, onToggle: this._onToggle, onPreset: this._onPreset })}
         </div>
-        <div class="area-slots">
+        <div class="area-slots" ?inert=${busy}>
           ${selected.length > 1 && !loading && !dirty ? this._renderBanner(ctx.base) : nothing}
           ${showEditor
             ? renderSlotList({
@@ -331,7 +436,7 @@ export class EbusdTimeProgramCard extends LitElement {
             : html`<div class="section"><p class="empty">${UI.noDaySelected}</p></div>`}
         </div>
         ${cfg.showPreview
-          ? html`<div class="area-preview">
+          ? html`<div class="area-preview" ?inert=${busy}>
               ${renderWeekPreview({
                 spec,
                 days: previewDays,
@@ -343,13 +448,22 @@ export class EbusdTimeProgramCard extends LitElement {
           : nothing}
         ${showBar
           ? html`<div class="area-apply">
-              ${this._dryRun
-                ? renderDryRun(this._dryRun, () => (this._dryRun = null))
+              ${this._job
+                ? renderBusyPanel({
+                    job: this._job,
+                    programName: program.name,
+                    verifyTimeoutS: cfg.verifyTimeout,
+                    onCancel: this._onCancelJob,
+                    onRetry: this._onRetry,
+                    onRestore: this._onRestore,
+                    onClose: this._onCloseJob,
+                  })
                 : renderApplyBar({
                     plan,
                     errors: ctx.errors,
                     deltas: slotDeltas(ctx.week, plan),
                     dirty,
+                    notice: this._notice,
                     onDiscard: this._onDiscard,
                     onApply: this._onApply,
                   })}
