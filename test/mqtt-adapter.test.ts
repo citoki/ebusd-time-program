@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectCountMessage, programFingerprint, readProgram } from "../src/adapters/mqtt.js";
-import { ConfigError, entityId, resolveConfig, topic } from "../src/config.js";
+import { ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
 import type { Hass, HassEntity } from "../src/hass.js";
 import { PROGRAMS } from "../src/model/programs.js";
 import states from "./fixtures/hass-states.json" with { type: "json" };
@@ -11,6 +11,14 @@ const cfg = resolveConfig({ type: "custom:ebusd-time-program-card" });
 const { z1, hwc, cc } = PROGRAMS;
 
 describe("config", () => {
+  it("derives the Z1 set-back sensor (single value, no field suffix)", () => {
+    const cfg = resolveConfig({ type: "x" });
+    expect(setbackEntityId(cfg)).toBe("sensor.ebusd_ctlv2_z1nighttemp");
+    expect((states as Record<string, HassEntity>)[setbackEntityId(cfg)]?.state).toBe("15.0");
+    expect(setbackEntityId(resolveConfig({ type: "x", mqtt_prefix: "vaillant" }))).toBe("sensor.vaillant_ctlv2_z1nighttemp");
+    expect(setbackEntityId(resolveConfig({ type: "x", setback_entity: "sensor.my_setback" }))).toBe("sensor.my_setback");
+  });
+
   it("defaults", () => {
     expect(cfg.prefix).toBe("ebusd");
     expect(cfg.circuit).toBe("ctlv2");

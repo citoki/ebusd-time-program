@@ -24,6 +24,8 @@ export interface CardConfig {
   default_days?: DefaultDays;
   show_preview?: boolean;
   accent?: string;
+  /** Entity with the Z1 set-back temperature shown in the info text (default: the Z1NightTemp sensor). */
+  setback_entity?: string;
 }
 
 export interface ResolvedProgram {
@@ -42,6 +44,8 @@ export interface ResolvedConfig {
   defaultDays: DefaultDays;
   showPreview: boolean;
   accent: string | null;
+  /** null = derive from the entity template (`Z1NightTemp`). */
+  setbackEntity: string | null;
 }
 
 export const DEFAULTS = {
@@ -99,7 +103,19 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     defaultDays: config.default_days ?? "weekdays",
     showPreview: config.show_preview ?? true,
     accent: config.accent ?? null,
+    setbackEntity: config.setback_entity ?? null,
   };
+}
+
+/** ebusd message holding the Z1 set-back temperature ("Absenktemperatur", register 0x9). */
+export const SETBACK_MESSAGE = "Z1NightTemp";
+
+/**
+ * Entity of the Z1 set-back temperature. It is a single-value sensor, so the
+ * `{field}` part of the template is empty: `sensor.ebusd_ctlv2_z1nighttemp`.
+ */
+export function setbackEntityId(cfg: ResolvedConfig): string {
+  return cfg.setbackEntity ?? entityId(cfg, SETBACK_MESSAGE, "").replace(/_+$/, "");
 }
 
 /** Replace `{name}` placeholders; unknown placeholders are left as they are. */

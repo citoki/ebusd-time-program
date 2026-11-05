@@ -8,6 +8,7 @@ export function renderTabs(
   statuses: readonly ReadStatus[],
   active: number,
   onSelect: (index: number) => void,
+  dirty: readonly boolean[] = [],
 ): TemplateResult {
   const onKey = (e: KeyboardEvent) => {
     const delta = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
@@ -26,10 +27,16 @@ export function renderTabs(
           role="tab"
           aria-selected=${i === active ? "true" : "false"}
           tabindex=${i === active ? 0 : -1}
-          title=${statuses[i] === "missing" ? `${p.name}: ${UI.status.missing}` : p.name}
+          title=${statuses[i] === "missing"
+            ? `${p.name}: ${UI.status.missing}`
+            : dirty[i]
+              ? `${p.name} (${UI.unsaved})`
+              : p.name}
           @click=${() => onSelect(i)}
         >
-          ${PROGRAM_SHORT[p.spec.id]}
+          ${PROGRAM_SHORT[p.spec.id]}${dirty[i]
+            ? html`<span class="tab-dirty" aria-label=${UI.unsaved}> •</span>`
+            : ""}
         </button>`,
     )}
   </div>`;

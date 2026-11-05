@@ -8,28 +8,31 @@ export interface WeekPreviewProps {
   spec: ProgramSpec;
   days: Record<Day, Slot[] | null>;
   selected: readonly Day[];
+  /** Days shown with the unsaved draft instead of the controller values. */
+  pending?: readonly Day[];
   onDay: (day: Day) => void;
 }
 
 /** 7 × 24 h bars; clicking a day label selects only that day. */
-export function renderWeekPreview({ spec, days, selected, onDay }: WeekPreviewProps): TemplateResult {
+export function renderWeekPreview({ spec, days, selected, pending = [], onDay }: WeekPreviewProps): TemplateResult {
   return html`<div class="section">
     <p class="label">${UI.preview}</p>
     <div class="week">
       ${DAYS.map((d) => {
         const slots = days[d];
         const isSel = selected.includes(d);
+        const isPending = pending.includes(d);
         return html`<button
             class="week-day ${isSel ? "selected" : ""}"
             aria-label=${UI.dayLong[d]}
             @click=${() => onDay(d)}
           >
-            ${UI.dayShort[d]}
+            <span class="pending-dot" aria-hidden="true">${isPending ? "•" : ""}</span>${UI.dayShort[d]}
           </button>
           <div
-            class="track ${isSel ? "selected" : ""} ${slots === null ? "loading" : ""}"
+            class="track ${isSel ? "selected" : ""} ${isPending ? "pending" : ""} ${slots === null ? "loading" : ""}"
             role="img"
-            aria-label=${describe(d, slots, spec)}
+            aria-label="${describe(d, slots, spec)}${isPending ? ` (${UI.unsaved})` : ""}"
           >
             ${(slots ?? []).map((s) => renderSegment(s, spec))}
           </div>`;

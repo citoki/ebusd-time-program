@@ -11,6 +11,7 @@ import {
   PRESETS,
   presetOf,
   sameSlots,
+  slotDeltas,
   toggleDay,
 } from "../src/model/week.js";
 
@@ -126,5 +127,36 @@ describe("planWrite", () => {
     expect(next.saturday).toEqual(draft);
     expect(next.sunday).toEqual(weekendDay);
     expect(next.monday).toEqual(workday);
+  });
+});
+
+describe("slotDeltas", () => {
+  const one: Slot[] = [{ start: "06:00", end: "07:00", temp: 20 }];
+  const two: Slot[] = [...one, { start: "18:00", end: "22:00", temp: 21 }];
+
+  it("groups added/removed slots by day and leaves out unchanged counts", () => {
+    const w = emptyWeek();
+    w.monday = one;
+    w.tuesday = two;
+    w.wednesday = [{ start: "05:00", end: "06:00", temp: 20 }, { start: "07:00", end: "08:00", temp: 20 }];
+    const plan = planWrite(w, ["monday", "tuesday", "wednesday", "thursday"], two, z1);
+    expect(plan.write).toEqual(["monday", "wednesday", "thursday"]);
+    expect(slotDeltas(w, plan)).toEqual([
+      { delta: 2, days: ["thursday"] },
+      { delta: 1, days: ["monday"] },
+    ]);
+  });
+
+  it("is empty when only times or temperatures change", () => {
+    const w = emptyWeek();
+    w.monday = one;
+    const plan = planWrite(w, ["monday"], [{ start: "06:30", end: "07:00", temp: 22 }], z1);
+    expect(slotDeltas(w, plan)).toEqual([]);
+  });
+
+  it("reports removals as negative", () => {
+    const w = emptyWeek();
+    w.monday = two;
+    expect(slotDeltas(w, planWrite(w, ["monday"], [], z1))).toEqual([{ delta: -2, days: ["monday"] }]);
   });
 });

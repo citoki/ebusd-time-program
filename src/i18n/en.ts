@@ -18,6 +18,8 @@ export const ISSUE_MESSAGES: Record<IssueCode, (p: Params) => string> = {
   no_days: () => "Select at least one day",
 };
 
+const UI_FIELD = { start: "Start", end: "End", temp: "Temperature" } as const;
+
 export const UI = {
   days: "Days",
   quickSelect: "Quick select",
@@ -26,6 +28,7 @@ export const UI = {
   end: "End",
   temp: "Temp.",
   slot: (n: number) => (n === 1 ? "1 slot" : `${n} slots`),
+  slotN: (n: number) => `Slot ${n}`,
   offAllDay: "Off all day",
   loading: "Loading…",
   noDaySelected: "Select at least one day",
@@ -43,10 +46,14 @@ export const UI = {
   sameProgram: (days: string) => `${days} share the same program`,
   differentPrograms: "Selected days have different programs.",
   showingFrom: "Showing",
+  info: "About this time program",
   hint: {
-    z1: "Outside these slots the zone uses its set-back temperature (set on the controller).",
-    hwc: "Outside these slots hot water is not heated.",
-    cc: "Outside these slots the pump is off.",
+    z1: (setback: number | null) =>
+      setback === null
+        ? "Outside these slots the zone only heats to its set-back temperature (set on the controller)."
+        : `Outside these slots the zone only heats to its set-back temperature of ${formatTemp(setback)} °C (set on the controller).`,
+    hwc: () => "Outside these slots hot water is not reheated.",
+    cc: () => "Outside these slots the circulation pump is off.",
   },
   status: {
     ok: "Connected – values from ebusd",
@@ -55,7 +62,40 @@ export const UI = {
   },
   missingLookedFor: "Looked for one of:",
   missingHelp: "Check mqtt_prefix, circuit and entity_template in the card configuration.",
-  readOnly: "Read-only preview – editing comes in a later version.",
+  startEmpty: "Start empty",
+  unsaved: "unsaved changes",
+  // slot editor
+  addSlot: "Add time slot",
+  slotsLeft: (n: number) => `(${n} left)`,
+  noGap: "No free time left on this day",
+  deleteSlot: (n: number) => `Delete slot ${n}`,
+  editField: (field: "start" | "end" | "temp", n: number) => `${UI_FIELD[field]}, slot ${n}`,
+  tempUnknown: "– °C",
+  // sheets
+  sheetTitle: (field: "start" | "end" | "temp", n: number) => `${UI_FIELD[field]} · Slot ${n}`,
+  hour: "Hour",
+  minute: "Minute",
+  up: (what: string) => `${what} up`,
+  down: (what: string) => `${what} down`,
+  minus10: "−10 min",
+  plus10: "+10 min",
+  tempDown: "Lower temperature",
+  tempUp: "Raise temperature",
+  done: "Done",
+  cancel: "Cancel",
+  // apply bar
+  change: "Change:",
+  dayCount: (n: number) => (n === 1 ? "1 day" : `${n} days`),
+  unchangedDays: (days: string) => `${days} unchanged`,
+  errors: (n: number) => (n === 1 ? "1 error – fix before applying" : `${n} errors – fix before applying`),
+  slotsAdded: (n: number) => (n === 1 ? "1 slot added" : `${n} slots added`),
+  slotsRemoved: (n: number) => (n === 1 ? "1 slot removed" : `${n} slots removed`),
+  discard: "Discard",
+  applyTo: (n: number) => `Apply to ${n === 1 ? "1 day" : `${n} days`}`,
+  dryRunTitle: "Dry run – nothing was sent",
+  dryRunHelp: "Writing to the controller comes in the next version. These messages would be published, in this order:",
+  close: "Close",
+  footnote: "Apply is a dry run in this version – nothing is written to the controller yet.",
 } as const;
 
 export function issueMessage(issue: Issue): string {

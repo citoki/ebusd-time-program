@@ -91,13 +91,16 @@ export const cardStyles = css`
   .tab.unavailable {
     opacity: 0.45;
   }
+  .tab-dirty {
+    color: var(--etp-accent);
+  }
 
   /* ---------- layout ---------- */
   /* narrow: days, slots, preview stacked (PLAN.md §4.1);
      wide: days + preview left, slots right (§4.6) */
   .body {
     display: grid;
-    grid-template-areas: "days" "slots" "preview";
+    grid-template-areas: "days" "slots" "preview" "apply";
   }
   .area-days {
     grid-area: days;
@@ -110,16 +113,27 @@ export const cardStyles = css`
     grid-area: preview;
     border-top: 1px solid var(--etp-divider);
   }
+  .area-apply {
+    grid-area: apply;
+    border-top: 1px solid var(--etp-divider);
+  }
   @container (min-width: 720px) {
     .body {
       grid-template-columns: minmax(300px, 1fr) 1.2fr;
-      grid-template-areas: "days slots" "preview slots";
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas: "days slots" "preview slots" "preview apply";
       align-items: start;
+    }
+    .area-slots,
+    .area-apply {
+      border-left: 1px solid var(--etp-divider);
+      align-self: stretch;
     }
     .area-slots {
       border-top: none;
-      border-left: 1px solid var(--etp-divider);
-      align-self: stretch;
+    }
+    .area-preview {
+      grid-row: 2 / span 2;
     }
   }
   .section {
@@ -243,9 +257,10 @@ export const cardStyles = css`
   .slot-row,
   .slot-head {
     display: grid;
-    grid-template-columns: 4.5em 1.5em 4.5em 1fr;
+    grid-template-columns: 4.6rem 1.2rem 4.6rem 1fr 44px;
     align-items: center;
     gap: 4px;
+    padding-left: 8px;
   }
   .slot-head {
     font-size: 0.8rem;
@@ -262,14 +277,313 @@ export const cardStyles = css`
   .slot-row {
     min-height: 56px;
     border-bottom: 1px solid var(--etp-divider);
-    font-size: 1.25rem;
     font-variant-numeric: tabular-nums;
+  }
+  .slot-row.changed {
+    box-shadow: inset 3px 0 0 var(--etp-accent);
+  }
+  .slot-row.invalid {
+    box-shadow: inset 3px 0 0 var(--etp-error);
+  }
+  .row-issues {
+    grid-column: 1 / -1;
+    padding-bottom: 6px;
+  }
+  .field {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px 4px;
+    min-height: 44px;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+  }
+  .field.time {
+    font-size: 1.25rem;
+  }
+  .field:hover {
+    background: var(--etp-surface-2);
+  }
+  .field.bad {
+    color: var(--etp-error);
+    border-color: var(--etp-error);
+  }
+  button.pill {
+    border: 1px solid transparent;
+    min-height: 40px;
+  }
+  button.pill:hover {
+    border-color: var(--etp-divider);
+  }
+  button.pill.bad {
+    border-color: var(--etp-error);
+  }
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--etp-muted);
+  }
+  .icon-btn:hover {
+    color: var(--etp-error);
+    background: var(--etp-surface-2);
+  }
+  /* info button sits at the far right of the add row, in the delete column */
+  .info-btn {
+    margin-left: auto;
+  }
+  .info-btn:hover,
+  .info-btn.active {
+    color: var(--etp-accent);
+  }
+  .info-box {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border-left: 3px solid var(--etp-accent);
+    background: var(--etp-surface-2);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  .info-icon {
+    color: var(--etp-accent);
+    flex: none;
+  }
+  .issue {
+    margin: 2px 0 4px;
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+  .issue.error {
+    color: var(--etp-error);
+  }
+  .issue.warning {
+    color: var(--etp-busy);
+  }
+  .issue.info {
+    color: var(--etp-muted);
+  }
+  .add-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-top: 12px;
+  }
+  .add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 6px 16px 6px 12px;
+    border: 1px dashed var(--etp-divider);
+    border-radius: 999px;
+    background: none;
+    color: var(--etp-accent);
+    font-weight: 500;
+  }
+  .add:hover:not(:disabled) {
+    border-color: var(--etp-accent);
+  }
+  .add:disabled,
+  .btn:disabled {
+    color: var(--etp-muted);
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .add-note,
+  .muted {
+    color: var(--etp-muted);
+  }
+  .add-note,
+  .small {
+    font-size: 0.85rem;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    min-height: 40px;
+    padding: 6px 18px;
+    border: 1px solid var(--etp-divider);
+    border-radius: 999px;
+    background: var(--etp-surface-2);
+    font-weight: 500;
+  }
+  .btn.small {
+    min-height: 32px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+  }
+  .btn.primary {
+    background: var(--etp-accent);
+    border-color: var(--etp-accent);
+    color: var(--etp-on-accent);
+  }
+  .btn.primary:disabled {
+    background: var(--etp-surface-2);
+    border-color: var(--etp-divider);
+  }
+
+  /* ---------- apply bar ---------- */
+  .apply-bar {
+    padding: 12px 16px 14px;
+  }
+  .apply-summary {
+    margin: 0 0 4px;
+    font-size: 0.9rem;
+  }
+  .apply-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .dry-list {
+    padding-left: 22px;
+  }
+  .dry-list li {
+    margin-bottom: 6px;
+  }
+
+  /* ---------- sheets (native modal dialog) ---------- */
+  dialog.sheet {
+    border: none;
+    border-radius: 16px;
+    padding: 16px 20px 20px;
+    width: min(360px, calc(100vw - 32px));
+    box-sizing: border-box;
+    background: var(--etp-surface);
+    color: var(--etp-text);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  }
+  dialog.sheet::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+  @media (max-width: 600px) {
+    dialog.sheet {
+      margin: auto 0 0;
+      width: 100%;
+      max-width: 100%;
+      border-radius: 16px 16px 0 0;
+    }
+  }
+  .sheet-title {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  .spinners {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  .spin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .spin-btn {
+    width: 64px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: none;
+    color: var(--etp-muted);
+  }
+  .spin-btn:hover:not(:disabled) {
+    background: var(--etp-surface-2);
+    color: var(--etp-text);
+  }
+  .spin-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .spin-val,
+  .spin-colon {
+    font-size: 2.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .spin-val {
+    min-width: 2.2em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--etp-surface-2);
+    text-align: center;
+    cursor: ns-resize;
+  }
+  .spin-val:focus-visible,
+  .temp-slider:focus-visible {
+    outline: 2px solid var(--etp-accent);
+    outline-offset: 2px;
+  }
+  .quick {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 14px 0 4px;
+  }
+  .temp-big {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin: 4px 0 12px;
+  }
+  .round-btn {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: var(--etp-surface-2);
+    font-size: 1.5rem;
+  }
+  .round-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .temp-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 5.5em;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .temp-slider {
+    width: 100%;
+    accent-color: var(--etp-accent);
+  }
+  .range-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--etp-muted);
+  }
+  .sheet-issues {
+    min-height: 1.4em;
+    margin-top: 8px;
+  }
+  .sheet-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
   }
   .dash {
     text-align: center;
     color: var(--etp-muted);
   }
   .pill {
+    white-space: nowrap;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -327,7 +641,7 @@ export const cardStyles = css`
   /* ---------- week preview ---------- */
   .week {
     display: grid;
-    grid-template-columns: 2.2em 1fr;
+    grid-template-columns: 2.8em 1fr;
     row-gap: 6px;
     column-gap: 8px;
     align-items: center;
@@ -339,6 +653,12 @@ export const cardStyles = css`
     text-align: left;
     font-size: 0.85rem;
     color: var(--etp-muted);
+  }
+  /* fixed-width slot left of the day name, so all names stay aligned */
+  .pending-dot {
+    display: inline-block;
+    width: 0.8em;
+    color: var(--etp-accent);
   }
   .week-day.selected {
     color: var(--etp-accent);
@@ -353,6 +673,10 @@ export const cardStyles = css`
   }
   .track.selected {
     box-shadow: inset 0 0 0 1px var(--etp-accent);
+  }
+  .track.pending {
+    outline: 1px dashed var(--etp-accent);
+    outline-offset: 2px;
   }
   .track.loading {
     background: repeating-linear-gradient(

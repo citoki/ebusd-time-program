@@ -113,6 +113,25 @@ export function planWrite(
   return { write, unchanged, slots: normalizeSlots(draft, spec) };
 }
 
+export interface SlotDelta {
+  /** Slots added (> 0) or removed (< 0) compared to the day's current program. Never 0. */
+  delta: number;
+  days: Day[];
+}
+
+/**
+ * How many slots the write adds or removes, grouped by day. Days whose slot
+ * count does not change are left out, so an empty result means "same count".
+ */
+export function slotDeltas(week: Week, plan: WritePlan): SlotDelta[] {
+  const groups = new Map<number, Day[]>();
+  for (const day of plan.write) {
+    const delta = plan.slots.length - week[day].length;
+    if (delta !== 0) groups.set(delta, [...(groups.get(delta) ?? []), day]);
+  }
+  return [...groups].sort((a, b) => b[0] - a[0]).map(([delta, days]) => ({ delta, days }));
+}
+
 /** Week after applying a draft to some days (used for preview and verification). */
 export function applyDraft(week: Week, days: readonly Day[], draft: readonly Slot[], spec: ProgramSpec): Week {
   const next = { ...week };
