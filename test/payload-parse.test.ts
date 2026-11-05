@@ -59,7 +59,7 @@ describe("buildDayPayloads – temperature programs", () => {
     ]);
   });
   it("empty day sends '-' as temperature", () => {
-    expect(buildDayPayloads(z1, [])).toEqual(["0;0;00:00;00:00;-"]);
+    expect(buildDayPayloads(z1, [])).toEqual(["0;0;00:00;00:00;0.0"]);
   });
 });
 

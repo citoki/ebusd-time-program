@@ -43,9 +43,11 @@ export function buildDayPayloads(spec: ProgramSpec, slots: readonly Slot[]): str
 
   const sorted = normalizeSlots(slots, spec);
   if (sorted.length === 0) {
-    // Verified for CC. For temperature programs the temp field is sent as "-"
-    // (ebusd's "no value"), as the ebusd_vaillant integration does for HWC.
-    return [spec.temp ? "0;0;00:00;00:00;-" : "0;0;00:00;00:00"];
+    // CC verified by our own write (T5). For temperature programs this is
+    // exactly what the myVAILLANT app sends (traced 2026-11-05, Z1 Sunday:
+    // `a6 00 00 06 00 00 0000 0000 0000`, temp 0x0000 = 0.0). The controller
+    // then reads the empty slots back as `00:00;00:00;-`.
+    return [spec.temp ? "0;0;00:00;00:00;0.0" : "0;0;00:00;00:00"];
   }
   const count = sorted.length;
   return sorted.map((s, i) => {
