@@ -2,7 +2,6 @@ import { html, type TemplateResult } from "lit";
 import { formatTemp, UI } from "../i18n/en.js";
 import { MINUTES_PER_DAY, toMinutes } from "../model/time.js";
 import { DAYS, type Day, type ProgramSpec, type Slot } from "../model/types.js";
-import { tempBand } from "./colors.js";
 
 export interface WeekPreviewProps {
   spec: ProgramSpec;
@@ -50,7 +49,7 @@ function renderSegment(slot: Slot, spec: ProgramSpec): TemplateResult {
   const width = Math.max(((end - start) / MINUTES_PER_DAY) * 100, 0.8);
   const label = `${slot.start}–${slot.end}${slot.temp !== undefined && spec.temp ? ` · ${formatTemp(slot.temp)} °C` : ""}`;
   return html`<span
-    class="seg ${tempBand(spec, slot.temp) ?? ""}"
+    class="seg ${spec.temp ? "heat" : ""}"
     style="left:${left}%;width:${width}%"
     title=${label}
   ></span>`;

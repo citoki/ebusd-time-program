@@ -2,6 +2,8 @@ import { PROGRAMS } from "./model/programs.js";
 import type { ProgramId, ProgramSpec } from "./model/types.js";
 
 export type DefaultDays = "all" | "weekdays" | "weekend" | "today";
+export type CardTheme = "brand" | "default";
+export const THEMES: readonly CardTheme[] = ["brand", "default"];
 
 export interface ProgramConfig {
   id: ProgramId;
@@ -23,6 +25,12 @@ export interface CardConfig {
   programs?: (ProgramId | ProgramConfig)[];
   default_days?: DefaultDays;
   show_preview?: boolean;
+  /**
+   * `brand` (default): the card's own dark look, teal accent, red heating times.
+   * `default`: the HA theme, with its primary and accent colour.
+   */
+  theme?: CardTheme;
+  /** Override the accent colour with any CSS colour, e.g. `"#e07a1f"`. */
   accent?: string;
   /** Entity with the Z1 set-back temperature shown in the info text (default: the Z1NightTemp sensor). */
   setback_entity?: string;
@@ -45,6 +53,8 @@ export interface ResolvedConfig {
   programs: ResolvedProgram[];
   defaultDays: DefaultDays;
   showPreview: boolean;
+  theme: CardTheme;
+  /** Custom accent colour; null = the theme's. */
   accent: string | null;
   /** null = derive from the entity template (`Z1NightTemp`). */
   setbackEntity: string | null;
@@ -86,6 +96,10 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   if (!Array.isArray(entries) || entries.length === 0) {
     throw new ConfigError("`programs` must be a non-empty list");
   }
+  const theme = config.theme ?? "brand";
+  if (!THEMES.includes(theme)) {
+    throw new ConfigError(`Unknown theme "${String(theme)}" (supported: ${THEMES.join(", ")})`);
+  }
   const seen = new Set<ProgramId>();
   const programs = entries.map((entry): ResolvedProgram => {
     const p: ProgramConfig = typeof entry === "string" ? { id: entry } : entry;
@@ -108,10 +122,16 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     programs,
     defaultDays: config.default_days ?? "weekdays",
     showPreview: config.show_preview ?? true,
-    accent: config.accent ?? null,
+    theme,
+    accent: config.accent?.trim() || null,
     setbackEntity: config.setback_entity ?? null,
     verifyTimeout: config.verify_timeout ?? 30,
   };
+}
+
+/** Inline CSS variable for a custom accent colour; empty when the theme's is used. */
+export function accentStyle(cfg: ResolvedConfig): string {
+  return cfg.accent ? `--etp-accent:${cfg.accent}` : "";
 }
 
 /** ebusd message holding the Z1 set-back temperature ("Absenktemperatur", register 0x9). */

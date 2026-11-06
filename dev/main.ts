@@ -10,11 +10,27 @@ import { sampleStates } from "../test/fixtures/hass-states.js";
 //   ignore=Z1Timer_Tuesday,...   writes the fake controller ACKs but never applies (-> failure)
 //   timeout=5            verify timeout in s (default 30)
 //   nomqtt=1             hass without callService
+//   theme=default        HA theme instead of the brand look; ha=light fakes a light HA theme
 const params = new URLSearchParams(location.search);
 
 const config: CardConfig = { type: "custom:ebusd-time-program-card" };
 const prefix = params.get("prefix");
 if (prefix) config.mqtt_prefix = prefix;
+const theme = params.get("theme");
+if (theme) config.theme = theme as NonNullable<CardConfig["theme"]>;
+if (params.get("ha") === "light") {
+  // a light HA theme with its own primary/accent colours, to see what the card takes over
+  Object.entries({
+    "--primary-color": "#03a9f4",
+    "--accent-color": "#ff9800",
+    "--card-background-color": "#ffffff",
+    "--secondary-background-color": "#eef0f2",
+    "--primary-text-color": "#212121",
+    "--secondary-text-color": "#727272",
+    "--divider-color": "rgba(0, 0, 0, 0.12)",
+  }).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  document.body.style.background = "#fafafa";
+}
 const timeout = params.get("timeout");
 if (timeout) config.verify_timeout = Number(timeout);
 

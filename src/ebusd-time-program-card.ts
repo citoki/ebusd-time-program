@@ -7,7 +7,7 @@ import { renderTabs } from "./components/program-tabs.js";
 import { renderSheet, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview } from "./components/week-preview.js";
-import { resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
+import { accentStyle, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { ISSUE_MESSAGES, UI } from "./i18n/en.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
@@ -39,7 +39,7 @@ let pageJobOwner: object | null = null;
 
 /** How long the "Saved to …" confirmation stays before it closes itself. */
 const SUCCESS_VISIBLE_MS = 10_000;
-export const CARD_VERSION = "0.3.0";
+export const CARD_VERSION = "0.3.1";
 
 /** Everything the editor needs for the active program, derived from state. */
 interface EditorContext {
@@ -124,6 +124,8 @@ export class EbusdTimeProgramCard extends LitElement {
     this._job = null;
     this._fingerprint = "";
     this._refresh();
+    this.dataset.theme = this._cfg.theme;
+    this.requestUpdate(); // _cfg is not reactive; HA calls setConfig again on YAML edits
   }
 
   set hass(hass: Hass) {
@@ -389,7 +391,7 @@ export class EbusdTimeProgramCard extends LitElement {
     if (!cfg) return nothing;
     const read = this._reads[this._active];
     const status = this._busy ? "busy" : (read?.status ?? "loading");
-    const style = cfg.accent ? `--etp-accent:${cfg.accent}` : "";
+    const style = accentStyle(cfg);
 
     return html`<ha-card style=${style}>
       <div class="header">

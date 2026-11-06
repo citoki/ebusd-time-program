@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectCountMessage, programFingerprint, readProgram } from "../src/adapters/mqtt.js";
-import { ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
+import { accentStyle, ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
 import type { Hass } from "../src/hass.js";
 import { PROGRAMS } from "../src/model/programs.js";
 import { SAMPLE_SETBACK, SAMPLE_WEEKS, sampleStates } from "./fixtures/hass-states.js";
@@ -16,6 +16,15 @@ describe("config", () => {
     expect(sampleStates()[setbackEntityId(cfg)]?.state).toBe(SAMPLE_SETBACK);
     expect(setbackEntityId(resolveConfig({ type: "x", mqtt_prefix: "vaillant" }))).toBe("sensor.vaillant_ctlv2_z1nighttemp");
     expect(setbackEntityId(resolveConfig({ type: "x", setback_entity: "sensor.my_setback" }))).toBe("sensor.my_setback");
+  });
+
+  it("theme: brand by default, HA theme on request; accent overrides the colour", () => {
+    expect(cfg.theme).toBe("brand");
+    expect(resolveConfig({ type: "x", theme: "default" }).theme).toBe("default");
+    expect(() => resolveConfig({ type: "x", theme: "dark" as never })).toThrow('Unknown theme "dark"');
+    expect(accentStyle(cfg)).toBe("");
+    expect(accentStyle(resolveConfig({ type: "x", accent: "" }))).toBe("");
+    expect(accentStyle(resolveConfig({ type: "x", theme: "default", accent: "#e07a1f" }))).toBe("--etp-accent:#e07a1f");
   });
 
   it("defaults", () => {

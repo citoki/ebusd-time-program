@@ -1,21 +1,37 @@
 import { css } from "lit";
 
 export const cardStyles = css`
+  /* theme: brand (default) - the card's own dark look, independent of the HA theme */
   :host {
-    --etp-accent: var(--primary-color, #3fa38f);
-    --etp-surface: var(--ha-card-background, var(--card-background-color, #1c1c1e));
-    --etp-surface-2: var(--secondary-background-color, #2a2a2d);
-    --etp-text: var(--primary-text-color, #f2f2f2);
-    --etp-muted: var(--secondary-text-color, #9a9a9e);
-    --etp-divider: var(--divider-color, rgba(255, 255, 255, 0.12));
+    --etp-accent: #3fa38f;
+    --etp-on-accent: #fff;
+    --etp-heat: #c8512a;
+    --etp-surface: #1c1c1e;
+    --etp-surface-2: #2a2a2d;
+    --etp-text: #f2f2f2;
+    --etp-muted: #9a9a9e;
+    --etp-divider: rgba(255, 255, 255, 0.12);
     --etp-temp-cold: #4f8bd6;
     --etp-temp-mid: #e0a030;
     --etp-temp-warm: #c8512a;
-    --etp-ok: var(--success-color, #43a047);
+    --etp-ok: #43a047;
     --etp-busy: #e0a030;
-    --etp-error: var(--error-color, #db4437);
-    --etp-on-accent: var(--text-primary-color, #fff);
+    --etp-error: #db4437;
     display: block;
+  }
+  /* theme: default - follow the HA theme: primary colour as accent, accent colour for heating times */
+  :host([data-theme="default"]) {
+    --etp-accent: var(--primary-color, #03a9f4);
+    --etp-on-accent: var(--text-primary-color, #fff);
+    --etp-heat: var(--accent-color, #ff9800);
+    --etp-surface: var(--ha-card-background, var(--card-background-color, #fff));
+    --etp-surface-2: var(--secondary-background-color, #e5e5e5);
+    --etp-text: var(--primary-text-color, #212121);
+    --etp-muted: var(--secondary-text-color, #727272);
+    --etp-divider: var(--divider-color, rgba(0, 0, 0, 0.12));
+    --etp-ok: var(--success-color, #43a047);
+    --etp-busy: var(--warning-color, #ffa600);
+    --etp-error: var(--error-color, #db4437);
   }
 
   ha-card {
@@ -714,16 +730,13 @@ export const cardStyles = css`
     border-radius: 50%;
     background: var(--etp-muted);
   }
-  .dot.cold,
-  .seg.cold {
+  .dot.cold {
     background: var(--etp-temp-cold);
   }
-  .dot.mid,
-  .seg.mid {
+  .dot.mid {
     background: var(--etp-temp-mid);
   }
-  .dot.warm,
-  .seg.warm {
+  .dot.warm {
     background: var(--etp-temp-warm);
   }
   .empty,
@@ -806,6 +819,10 @@ export const cardStyles = css`
     top: 0;
     bottom: 0;
     background: var(--etp-accent);
+  }
+  /* Z1/HWC: heating times */
+  .seg.heat {
+    background: var(--etp-heat);
   }
   .axis {
     grid-column: 2;
