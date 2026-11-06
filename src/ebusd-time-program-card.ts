@@ -1,15 +1,15 @@
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { programFingerprint, readProgram, type ProgramRead } from "./adapters/mqtt.js";
+import { programFingerprint, readProgram, type ProgramRead, type ReadStatus } from "./adapters/mqtt.js";
 import { renderApplyBar } from "./components/apply-bar.js";
 import { renderBusyPanel } from "./components/busy-panel.js";
 import { renderDayPicker, selectionLabel } from "./components/day-picker.js";
 import { renderTabs } from "./components/program-tabs.js";
 import { renderSheet, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
-import { renderWeekPreview } from "./components/week-preview.js";
+import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
 import { accentStyle, DEFAULTS, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
-import { ISSUE_MESSAGES, UI } from "./i18n/en.js";
+import { formatTemp, ISSUE_MESSAGES, UI } from "./i18n/en.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
 import { MAX_SLOTS } from "./model/programs.js";
 import { fromMinutes, toMinutes } from "./model/time.js";
@@ -73,6 +73,9 @@ export class EbusdTimeProgramCard extends LitElement {
     _notice: { state: true },
     _infoOpen: { state: true },
     _setback: { state: true },
+    _now: { state: true },
+    _detail: { state: true },
+    _hover: { state: true },
   };
 
   declare _active: number;
@@ -87,9 +90,14 @@ export class EbusdTimeProgramCard extends LitElement {
   /** One-off error shown in the apply bar (e.g. no service access). */
   declare _notice: string | null;
   declare _infoOpen: boolean;
-  /** Z1 set-back temperature from HA, for the info text (null = unknown). */
   /** Set-back temperature per configured program (zones only). */
   declare _setback: (number | null)[];
+  /** Current time for the "now" marker, refreshed every minute. */
+  declare _now: Date;
+  /** Preview mode: the day written out below the chart (clicked, default today) … */
+  declare _detail: Day;
+  /** … or the day under the pointer. */
+  declare _hover: Day | null;
 
   private _cfg: ResolvedConfig | undefined;
   private _hass: Hass | undefined;
@@ -98,6 +106,7 @@ export class EbusdTimeProgramCard extends LitElement {
   /** Resolvers of the running job waiting for the next hass update. */
   private _waiters: (() => void)[] = [];
   private _successTimer: ReturnType<typeof setTimeout> | undefined;
+  private _clock: ReturnType<typeof setInterval> | undefined;
 
   constructor() {
     super();
@@ -111,6 +120,9 @@ export class EbusdTimeProgramCard extends LitElement {
     this._notice = null;
     this._infoOpen = false;
     this._setback = [];
+    this._now = new Date();
+    this._detail = dayOf(this._now);
+    this._hover = null;
   }
 
   // ---------- Lovelace API ----------
@@ -140,12 +152,15 @@ export class EbusdTimeProgramCard extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     window.addEventListener("beforeunload", this._onBeforeUnload);
+    this._now = new Date();
+    this._clock = setInterval(() => (this._now = new Date()), 60_000);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener("beforeunload", this._onBeforeUnload);
     clearTimeout(this._successTimer);
+    clearInterval(this._clock);
   }
 
   private get _busy(): boolean {
@@ -159,7 +174,8 @@ export class EbusdTimeProgramCard extends LitElement {
   };
 
   getCardSize(): number {
-    return 10;
+    if (this._cfg?.mode !== "preview") return 10;
+    return this._cfg.stacked ? 1 + 4 * this._cfg.programs.length : 5;
   }
 
   getGridOptions() {
@@ -174,6 +190,7 @@ export class EbusdTimeProgramCard extends LitElement {
       circuit: DEFAULTS.circuit,
       programs: [...DEFAULTS.programs],
       default_days: "weekdays",
+      mode: "edit",
       theme: "brand",
       layout: "auto",
     };
@@ -404,20 +421,12 @@ export class EbusdTimeProgramCard extends LitElement {
   protected override render(): TemplateResult | typeof nothing {
     const cfg = this._cfg;
     if (!cfg) return nothing;
+    if (cfg.mode === "preview") return this._renderPreviewMode(cfg);
     const read = this._reads[this._active];
     const status = this._busy ? "busy" : (read?.status ?? "loading");
-    const style = accentStyle(cfg);
 
-    return html`<ha-card style=${style}>
-      <div class="header">
-        <h2 class="title">${cfg.title}</h2>
-        <span
-          class="status ${status}"
-          role="img"
-          aria-label=${status === "busy" ? UI.busyStatus : UI.status[status]}
-          title=${status === "busy" ? UI.busyStatus : UI.status[status]}
-        ></span>
-      </div>
+    return html`<ha-card style=${accentStyle(cfg)}>
+      ${this._renderHeader(cfg, status)}
       ${renderTabs(
         cfg.programs,
         cfg.programs.map((_, i) => this._reads[i]?.status ?? "loading"),
@@ -428,6 +437,62 @@ export class EbusdTimeProgramCard extends LitElement {
       )}
       ${read?.status === "missing" ? this._renderMissing(read, cfg.programs[this._active]!) : this._renderBody(cfg)}
     </ha-card>`;
+  }
+
+  private _renderHeader(cfg: ResolvedConfig, status: ReadStatus | "busy"): TemplateResult {
+    const label = status === "busy" ? UI.busyStatus : UI.status[status];
+    return html`<div class="header">
+      <h2 class="title">${cfg.title}</h2>
+      <span class="status ${status}" role="img" aria-label=${label} title=${label}></span>
+    </div>`;
+  }
+
+  private _nowMarker(): { day: Day; minutes: number } {
+    return { day: dayOf(this._now), minutes: this._now.getHours() * 60 + this._now.getMinutes() };
+  }
+
+  // ---------- preview mode (read-only) ----------
+
+  private _renderPreviewMode(cfg: ResolvedConfig): TemplateResult {
+    const statuses = cfg.programs.map((_, i) => this._reads[i]?.status ?? "loading");
+    const shown = cfg.stacked ? cfg.programs.map((_, i) => i) : [this._active];
+    // the dot shows the worst state of what is on screen
+    const status = (["offline", "missing", "loading"] as const).find((s) => shown.some((i) => statuses[i] === s)) ?? "ok";
+    return html`<ha-card class="preview-mode" style=${accentStyle(cfg)}>
+      ${this._renderHeader(cfg, status)}
+      ${cfg.stacked ? nothing : renderTabs(cfg.programs, statuses, this._active, this._onTab)}
+      ${shown.map((i) => this._renderPreviewOf(cfg, i))}
+    </ha-card>`;
+  }
+
+  private _renderPreviewOf(cfg: ResolvedConfig, index: number): TemplateResult {
+    const program = cfg.programs[index]!;
+    const { spec, name } = program;
+    const read = this._reads[index];
+    if (read?.status === "missing") {
+      if (!cfg.stacked) return this._renderMissing(read, program);
+      return html`<div class="section">
+        <p class="label">${name}</p>
+        <p class="warn">${UI.status.missing}</p>
+        <p class="hint">${read.missing[0]}</p>
+      </div>`;
+    }
+    const days = read?.days ?? (Object.fromEntries(DAYS.map((d) => [d, null])) as ProgramRead["days"]);
+    const uniform = uniformTemp(days, spec);
+    const day = this._hover ?? this._detail;
+    return renderWeekPreview({
+      spec,
+      days,
+      selected: [day],
+      onDay: (d) => (this._detail = d),
+      onHover: (d) => (this._hover = d),
+      heading: uniform === null ? name : `${name} · ${formatTemp(uniform)} °C`,
+      labels: spec.temp !== null && (cfg.tempLabels === "always" || (cfg.tempLabels === "auto" && uniform === null)),
+      detailTemps: uniform === null,
+      now: this._nowMarker(),
+      detail: day,
+      alert: read?.status === "offline" ? UI.status.offline : undefined,
+    });
   }
 
   private _renderMissing(read: ProgramRead, program: ResolvedProgram): TemplateResult {
@@ -491,6 +556,7 @@ export class EbusdTimeProgramCard extends LitElement {
                 selected,
                 pending: dirty ? plan.write : [],
                 onDay: this._onPreviewDay,
+                now: this._nowMarker(),
               })}
             </div>`
           : nothing}
@@ -587,8 +653,11 @@ function addBlocked(slots: readonly Slot[], spec: ProgramSpec): string | null {
   return suggestSlot(slots, spec) ? null : UI.noGap;
 }
 
+/** Day of a date (JS: Sunday = 0). */
+const dayOf = (d: Date): Day => DAYS[(d.getDay() + 6) % 7]!;
+
 function initialDays(mode: DefaultDays): Day[] {
-  if (mode === "today") return [DAYS[(new Date().getDay() + 6) % 7]!];
+  if (mode === "today") return [dayOf(new Date())];
   return [...PRESETS[mode]];
 }
 

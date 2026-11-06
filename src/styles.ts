@@ -28,6 +28,7 @@ export const cardStyles = css`
     --etp-accent: #3fa38f;
     --etp-on-accent: #fff;
     --etp-heat: #c8512a;
+    --etp-heat-text: #e6e6e6;
     --etp-surface: #1c1c1e;
     --etp-surface-2: #2a2a2d;
     --etp-text: #f2f2f2;
@@ -47,6 +48,10 @@ export const cardStyles = css`
     --etp-accent: var(--primary-color, #03a9f4);
     --etp-on-accent: var(--text-primary-color, #fff);
     --etp-heat: var(--accent-color, #ff9800);
+    /* HA's text colour for content on the accent colour. HA only sets it when the
+       user picks an accent colour (white or #212121 by contrast); for the default
+       orange accent HA's own rule gives #212121, so that is the fallback. */
+    --etp-heat-text: var(--text-accent-color, #212121);
     --etp-surface: var(--ha-card-background, var(--card-background-color, #fff));
     --etp-surface-2: var(--secondary-background-color, #e5e5e5);
     --etp-text: var(--primary-text-color, #212121);
@@ -849,6 +854,58 @@ export const cardStyles = css`
   /* Z1/HWC: heating times */
   .seg.heat {
     background: var(--etp-heat);
+  }
+  /* temperature written inside long segments (preview mode) */
+  .week.labelled .track {
+    height: 18px;
+  }
+  .seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--etp-heat-text);
+  }
+  /* current time on today's row */
+  .now {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--etp-text);
+    box-shadow: 0 0 0 1px var(--etp-surface);
+    pointer-events: none;
+  }
+  .week-day.today {
+    color: var(--etp-text);
+    font-weight: 600;
+  }
+  .week-day.today.selected {
+    color: var(--etp-accent);
+  }
+  /* preview mode: a click or hover on a row writes its slots out */
+  .preview-mode .track {
+    cursor: pointer;
+  }
+  .detail {
+    margin: 10px 0 0;
+    font-size: 0.85rem;
+    color: var(--etp-text);
+    min-height: 1.3em;
+  }
+  .detail.error {
+    color: var(--etp-error);
+  }
+  .detail-day {
+    display: inline-block;
+    min-width: 2em;
+    color: var(--etp-accent);
+    font-weight: 600;
   }
   .axis {
     grid-column: 2;

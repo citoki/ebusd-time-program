@@ -6,6 +6,10 @@ export type CardTheme = "brand" | "default";
 export const THEMES: readonly CardTheme[] = ["brand", "default"];
 export type CardLayout = "auto" | "wide" | "narrow";
 export const LAYOUTS: readonly CardLayout[] = ["auto", "wide", "narrow"];
+export type CardMode = "edit" | "preview";
+export type TempLabels = "auto" | "always" | "never";
+export const TEMP_LABELS: readonly TempLabels[] = ["auto", "always", "never"];
+export const MODES: readonly CardMode[] = ["edit", "preview"];
 
 export interface ProgramConfig {
   id: ProgramId;
@@ -36,6 +40,15 @@ export interface CardConfig {
   theme?: CardTheme;
   /** `auto` (default): two columns from 720 px card width; `wide` / `narrow` force one. */
   layout?: CardLayout;
+  /** `edit` (default) or `preview`: read-only week chart, much smaller. */
+  mode?: CardMode;
+  /** Preview mode: all programs below each other instead of tabs. */
+  stacked?: boolean;
+  /**
+   * Preview mode: temperature inside long bars. `auto` (default): only when a
+   * program has more than one temperature (otherwise it is shown in the heading).
+   */
+  temp_labels?: TempLabels;
   /** Override the accent colour with any CSS colour, e.g. `"#e07a1f"`. */
   accent?: string;
   /** Z1 set-back temperature entity (default: the Z1NightTemp sensor); other zones set it per program. */
@@ -63,6 +76,9 @@ export interface ResolvedConfig {
   showPreview: boolean;
   theme: CardTheme;
   layout: CardLayout;
+  mode: CardMode;
+  stacked: boolean;
+  tempLabels: TempLabels;
   /** Custom accent colour; null = the theme's. */
   accent: string | null;
   verifyTimeout: number;
@@ -115,6 +131,14 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   if (!LAYOUTS.includes(layout)) {
     throw new ConfigError(`Unknown layout "${String(layout)}" (supported: ${LAYOUTS.join(", ")})`);
   }
+  const mode = config.mode ?? "edit";
+  if (!MODES.includes(mode)) {
+    throw new ConfigError(`Unknown mode "${String(mode)}" (supported: ${MODES.join(", ")})`);
+  }
+  const tempLabels = config.temp_labels ?? "auto";
+  if (!TEMP_LABELS.includes(tempLabels)) {
+    throw new ConfigError(`Unknown temp_labels "${String(tempLabels)}" (supported: ${TEMP_LABELS.join(", ")})`);
+  }
   const seen = new Set<ProgramId>();
   const programs = entries.map((entry): ResolvedProgram => {
     const p: ProgramConfig = typeof entry === "string" ? { id: entry } : entry;
@@ -140,6 +164,9 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     showPreview: config.show_preview ?? true,
     theme,
     layout,
+    mode,
+    stacked: config.stacked ?? false,
+    tempLabels,
     accent: config.accent?.trim() || null,
     verifyTimeout: config.verify_timeout ?? 30,
   };

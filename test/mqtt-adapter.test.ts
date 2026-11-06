@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { detectCountMessage, programFingerprint, readProgram } from "../src/adapters/mqtt.js";
 import { accentStyle, ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
 import type { Hass } from "../src/hass.js";
+import { uniformTemp } from "../src/components/week-preview.js";
 import { PROGRAMS } from "../src/model/programs.js";
 import { SAMPLE_SETBACK, SAMPLE_WEEKS, SAMPLE_Z2, sampleStates } from "./fixtures/hass-states.js";
 
@@ -44,6 +45,23 @@ describe("config", () => {
     expect(cfg.layout).toBe("auto");
     expect(resolveConfig({ type: "x", layout: "wide" }).layout).toBe("wide");
     expect(() => resolveConfig({ type: "x", layout: "full" as never })).toThrow('Unknown layout "full"');
+  });
+
+  it("mode: edit by default, preview on request; stacked off by default", () => {
+    expect([cfg.mode, cfg.stacked]).toEqual(["edit", false]);
+    const c = resolveConfig({ type: "x", mode: "preview", stacked: true });
+    expect([c.mode, c.stacked]).toEqual(["preview", true]);
+    expect(() => resolveConfig({ type: "x", mode: "view" as never })).toThrow('Unknown mode "view"');
+    expect(cfg.tempLabels).toBe("auto");
+    expect(resolveConfig({ type: "x", temp_labels: "always" }).tempLabels).toBe("always");
+    expect(() => resolveConfig({ type: "x", temp_labels: "yes" as never })).toThrow('Unknown temp_labels "yes"');
+  });
+
+  it("uniformTemp: one shared temperature, else null", () => {
+    const week = readProgram(live(), cfg, z1).days;
+    expect(uniformTemp(week, z1)).toBeNull(); // 21.0 on workdays, 21.5 on the weekend
+    expect(uniformTemp(readProgram(live(), cfg, hwc).days, hwc)).toBe(50);
+    expect(uniformTemp(readProgram(live(), cfg, cc).days, cc)).toBeNull(); // no temperatures
   });
 
   it("defaults", () => {

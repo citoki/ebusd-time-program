@@ -24,6 +24,7 @@ export const UI = {
   days: "Days",
   quickSelect: "Quick select",
   preview: "Preview",
+  now: "Now",
   start: "Start",
   end: "End",
   temp: "Temp.",

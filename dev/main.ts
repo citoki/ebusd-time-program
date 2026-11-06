@@ -13,6 +13,8 @@ import { mountScenarioBar } from "./scenarios.js";
 //   nomqtt=1             hass without callService
 //   state=startup|weekend|slot|offline|nohwc   start in a sensor-state scenario (toolbar on the page)
 //   programs=z1,z2,hwc   programs to show (the fake system has no Z2/Z3 sensors)
+//   mode=preview  stacked=1   read-only preview card (stacked: all programs, no tabs)
+//   labels=always|never  temperatures inside the bars (preview mode, default auto)
 //   layout=wide|narrow   force a layout (default auto)
 //   theme=default        HA theme instead of the brand look; ha=light fakes a light HA theme
 const params = new URLSearchParams(location.search);
@@ -24,6 +26,11 @@ const theme = params.get("theme");
 if (theme) config.theme = theme as NonNullable<CardConfig["theme"]>;
 const programs = params.get("programs");
 if (programs) config.programs = programs.split(",") as NonNullable<CardConfig["programs"]>;
+const mode = params.get("mode");
+if (mode) config.mode = mode as NonNullable<CardConfig["mode"]>;
+if (params.get("stacked")) config.stacked = true;
+const labels = params.get("labels");
+if (labels) config.temp_labels = labels as NonNullable<CardConfig["temp_labels"]>;
 const layout = params.get("layout");
 if (layout) config.layout = layout as NonNullable<CardConfig["layout"]>;
 if (params.get("ha") === "light") {
