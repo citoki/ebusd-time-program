@@ -36,6 +36,9 @@ export const CARD_TAG = "ebusd-time-program-card";
  * all instances (two cards could otherwise interleave slot writes).
  */
 let pageJobOwner: object | null = null;
+
+/** How long the "Saved to …" confirmation stays before it closes itself. */
+const SUCCESS_VISIBLE_MS = 10_000;
 export const CARD_VERSION = "0.3.0";
 
 /** Everything the editor needs for the active program, derived from state. */
@@ -93,6 +96,7 @@ export class EbusdTimeProgramCard extends LitElement {
   private _runner: WriteJob | null = null;
   /** Resolvers of the running job waiting for the next hass update. */
   private _waiters: (() => void)[] = [];
+  private _successTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     super();
@@ -138,6 +142,7 @@ export class EbusdTimeProgramCard extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener("beforeunload", this._onBeforeUnload);
+    clearTimeout(this._successTimer);
   }
 
   private get _busy(): boolean {
@@ -197,7 +202,17 @@ export class EbusdTimeProgramCard extends LitElement {
 
   // ---------- interaction ----------
 
+  /**
+   * A success message is only a confirmation: any further interaction
+   * dismisses it. Failed/cancelled results stay until Close, because they
+   * offer Restore previous / Retry.
+   */
+  private _dismissSuccess(): void {
+    if (this._job?.status === "done") this._job = null;
+  }
+
   private _setDraft(slots: Slot[] | undefined): void {
+    this._dismissSuccess();
     const drafts = [...this._drafts];
     // editing back to exactly the controller values is not a draft any more
     if (slots !== undefined && this._cfg) {
@@ -210,6 +225,7 @@ export class EbusdTimeProgramCard extends LitElement {
   }
 
   private _setSelection(days: Day[]): void {
+    this._dismissSuccess();
     this._selected = orderDays(days);
     this._source = undefined;
   }
@@ -223,6 +239,7 @@ export class EbusdTimeProgramCard extends LitElement {
   };
 
   private _onEdit = (index: number, field: SlotField) => {
+    this._dismissSuccess();
     const cfg = this._cfg;
     if (!cfg) return;
     const { slots, spec } = this._context(cfg);
@@ -341,6 +358,13 @@ export class EbusdTimeProgramCard extends LitElement {
       if (pageJobOwner === this) pageJobOwner = null;
     });
     this._runner = null;
+    if (result.status === "done") {
+      // close only this result, not a newer job or panel the user opened meanwhile
+      clearTimeout(this._successTimer);
+      this._successTimer = setTimeout(() => {
+        if (this._job === result) this._job = null;
+      }, SUCCESS_VISIBLE_MS);
+    }
     // success: the controller now has the draft, so it is not unsaved any more
     if (result.status === "done" && kind !== "restore") {
       const drafts = [...this._drafts];
@@ -431,7 +455,10 @@ export class EbusdTimeProgramCard extends LitElement {
                 onAdd: this._onAdd,
                 info: infoText(spec, this._setback),
                 infoOpen: this._infoOpen,
-                onInfo: () => (this._infoOpen = !this._infoOpen),
+                onInfo: () => {
+                  this._dismissSuccess();
+                  this._infoOpen = !this._infoOpen;
+                },
               })
             : html`<div class="section"><p class="empty">${UI.noDaySelected}</p></div>`}
         </div>
@@ -502,6 +529,7 @@ export class EbusdTimeProgramCard extends LitElement {
       return html`<div class="banner info">✓ ${UI.sameProgram(selectionLabel(this._selected))}</div>`;
     }
     const onChange = (e: Event) => {
+      this._dismissSuccess();
       this._source = (e.target as HTMLSelectElement).value as Day;
     };
     return html`<div class="banner" role="status">
