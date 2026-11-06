@@ -99,3 +99,10 @@ That is enough for a standard ebusd setup with zone 1, hot water and circulation
 Zones 2 and 3 use the same message names as zone 1 and should work the same way, but haven't been tested on a real
 system yet. Have a different setup? Please [open an issue](https://github.com/citoki/ebusd-time-program/issues)
 and tell us whether it works.
+
+## Support
+
+If the card is useful to you, you can support its development through
+[GitHub Sponsors](https://github.com/sponsors/citoki).
+
+[:octicons-heart-fill-16: Sponsor](https://github.com/sponsors/citoki){ .md-button }

@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "license": "MIT",
+  "funding": "https://github.com/sponsors/citoki",
   "scripts": {
     "dev": "vite dev --config vite.config.ts --port 5199 dev",
     "build": "vite build",

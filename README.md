@@ -159,6 +159,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and the
 [development guide](https://citoki.github.io/ebusd-time-program/development/). Corrections to the
 [translations](https://citoki.github.io/ebusd-time-program/translations/) are very welcome.
 
+## Support
+
+If the card is useful to you, you can support its development through
+[GitHub Sponsors](https://github.com/sponsors/citoki).
+
 ## License
 
 [MIT](LICENSE)
