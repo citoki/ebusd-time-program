@@ -2,6 +2,10 @@
 
 Bug reports, translations and pull requests are welcome.
 
+The [documentation](https://citoki.github.io/ebusd-time-program/) has more on the
+[development setup](https://citoki.github.io/ebusd-time-program/development/) and
+[translations](https://citoki.github.io/ebusd-time-program/translations/). Its sources are in `docs/`.
+
 ## Reporting a bug
 
 Please include:

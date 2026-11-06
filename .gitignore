@@ -3,3 +3,4 @@ node_modules/
 dist/
 coverage/
 scripts/.x.mjs
+site/

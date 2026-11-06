@@ -1,0 +1,61 @@
+[project]
+site_url = "https://citoki.github.io/ebusd-time-program/"
+site_name = "ebusd Time Program Card"
+site_description = "Home Assistant dashboard card to edit Vaillant (ebusd ctlv2) weekly time programs for several days at once"
+repo_url = "https://github.com/citoki/ebusd-time-program"
+edit_uri = "edit/main/docs/"
+extra_css = ["stylesheets/extra.css"]
+
+nav = [
+    { "Setup" = [
+        "index.md",
+        "ebusd.md",
+    ] },
+    { "Card" = [
+        "usage.md",
+        "options.md",
+        "examples.md",
+        "languages.md",
+    ] },
+    { "Contributing" = [
+        "development.md",
+        "translations.md",
+    ] },
+]
+
+[project.extra]
+generator = false
+
+[project.theme]
+icon.logo = "lucide/calendar-clock"
+features = [
+    "navigation.instant",
+    "navigation.sections",
+    "navigation.tracking",
+    "content.action.edit", # Edit this page
+    "content.action.view", # View source of this page
+    "content.code.annotate",
+    "content.code.copy",
+    "content.tabs.link",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "teal"
+accent = "deep-orange"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "teal"
+accent = "deep-orange"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
