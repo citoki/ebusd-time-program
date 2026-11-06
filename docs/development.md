@@ -64,6 +64,17 @@ copy is picked up on the next reload without touching the browser cache.
 | `dev/` | dev page |
 | `docs/` | this documentation |
 
+## Releasing
+
+The version lives in `package.json` only; the card reads it from there for the console banner.
+
+1. Bump it without creating a tag: `npm version 0.4.0 --no-git-tag-version`, commit and push.
+2. Tag and push: `git tag v0.4.0 && git push origin v0.4.0`.
+3. The [release workflow](https://github.com/citoki/ebusd-time-program/blob/main/.github/workflows/release.yaml)
+   checks that the tag matches `package.json`, runs typecheck, tests and build, and creates a **draft release** with
+   `ebusd-time-program-card.js` attached and generated release notes.
+4. Review the notes on GitHub and publish the release. HACS offers the new version from then on.
+
 ## Documentation
 
 The documentation is built with [Zensical](https://zensical.org) and published to GitHub Pages on every push to

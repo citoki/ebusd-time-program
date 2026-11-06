@@ -26,6 +26,7 @@ import {
   type SelectionDraft,
   type WritePlan,
 } from "./model/week.js";
+import { version } from "../package.json";
 import previewImage from "../assets/card-preview.webp?inline";
 import { cardStyles } from "./styles.js";
 import { restoreItems, retryItems, WriteJob, type JobKind, type JobSnapshot } from "./write-job.js";
@@ -40,7 +41,8 @@ let pageJobOwner: object | null = null;
 
 /** How long the "Saved to …" confirmation stays before it closes itself. */
 const SUCCESS_VISIBLE_MS = 10_000;
-export const CARD_VERSION = "0.3.1";
+/** From package.json; the release workflow checks that it matches the tag. */
+export const CARD_VERSION: string = version;
 
 /** Everything the editor needs for the active program, derived from state. */
 interface EditorContext {
