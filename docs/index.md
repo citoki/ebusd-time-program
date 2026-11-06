@@ -33,15 +33,26 @@ Before installing, make sure you have:
 
 [ebusd & entities](ebusd.md){ .md-button }
 
-=== "HACS"
+=== "Marketplace (2026.11+)"
+
+    Since Home Assistant 2026.11, HACS is built in as the **Marketplace**. Until the card is listed in the
+    catalog, add it from its link:
+
+    1. Go to **Settings :material-arrow-right: Marketplace :material-arrow-right: Add from link**
+       (custom repositories need a one-time GitHub sign-in)
+    2. Enter `https://github.com/citoki/ebusd-time-program` (type **Dashboard**, if asked)
+    3. **Download** the card
+    4. Reload the browser
+
+    The Marketplace adds the dashboard resource and offers updates for new releases.
+
+=== "HACS (before 2026.11)"
 
     1. Go to **HACS :material-arrow-right: ⋮ :material-arrow-right: Custom repositories**
        ([HACS custom repositories docs](https://hacs.xyz/docs/faq/custom_repositories/))
     2. Add the repository URL `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
     3. Search for **ebusd Time Program Card** and **download** it
     4. Reload the browser
-
-    HACS adds the dashboard resource for you.
 
 === "Manual"
 

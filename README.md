@@ -1,5 +1,6 @@
 # ebusd Time Program Card
 
+[![Validate](https://github.com/citoki/ebusd-time-program/actions/workflows/validate.yaml/badge.svg)](https://github.com/citoki/ebusd-time-program/actions/workflows/validate.yaml)
 [![Documentation](https://github.com/citoki/ebusd-time-program/actions/workflows/docs.yaml/badge.svg)](https://citoki.github.io/ebusd-time-program/)
 
 A Home Assistant dashboard card to view and edit the weekly time programs of a Vaillant controller
@@ -51,13 +52,18 @@ Programs used on this system: zone 1, hot water and circulation. Zones 2 and 3 u
 system yet. Running it on other hardware? Please
 [open an issue](https://github.com/citoki/ebusd-time-program/issues) and tell us whether it works.
 
-## Installation (HACS)
+## Installation (Marketplace, Home Assistant 2026.11+)
 
-1. Go to **HACS → ⋮ → Custom repositories**
-   ([HACS custom repositories docs](https://hacs.xyz/docs/faq/custom_repositories/))
-2. Add the repository URL `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
-3. Search for **ebusd Time Program Card** and **download** it
-4. Reload the browser
+Until the card is listed in the catalog, add it from its link:
+
+1. **Settings → Marketplace → Add from link** (needs a one-time GitHub sign-in)
+2. Enter `https://github.com/citoki/ebusd-time-program` (type **Dashboard**, if asked)
+3. **Download** the card and reload the browser
+
+## Installation (HACS, before 2026.11)
+
+1. **HACS → ⋮ → Custom repositories**, add `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
+2. Search for **ebusd Time Program Card**, **download** it and reload the browser
 
 ## Installation (manual)
 
