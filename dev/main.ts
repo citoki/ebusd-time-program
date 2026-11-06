@@ -10,6 +10,8 @@ import { sampleStates } from "../test/fixtures/hass-states.js";
 //   ignore=Z1Timer_Tuesday,...   writes the fake controller ACKs but never applies (-> failure)
 //   timeout=5            verify timeout in s (default 30)
 //   nomqtt=1             hass without callService
+//   programs=z1,z2,hwc   programs to show (the fake system has no Z2/Z3 sensors)
+//   layout=wide|narrow   force a layout (default auto)
 //   theme=default        HA theme instead of the brand look; ha=light fakes a light HA theme
 const params = new URLSearchParams(location.search);
 
@@ -18,6 +20,10 @@ const prefix = params.get("prefix");
 if (prefix) config.mqtt_prefix = prefix;
 const theme = params.get("theme");
 if (theme) config.theme = theme as NonNullable<CardConfig["theme"]>;
+const programs = params.get("programs");
+if (programs) config.programs = programs.split(",") as NonNullable<CardConfig["programs"]>;
+const layout = params.get("layout");
+if (layout) config.layout = layout as NonNullable<CardConfig["layout"]>;
 if (params.get("ha") === "light") {
   // a light HA theme with its own primary/accent colours, to see what the card takes over
   Object.entries({

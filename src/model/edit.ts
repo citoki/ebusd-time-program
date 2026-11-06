@@ -43,7 +43,7 @@ export function stepPart(minutes: number, part: "hour" | "minute", dir: 1 | -1, 
 /** Initial temperature for a new slot when there is no previous slot to copy. */
 export function defaultTemp(spec: ProgramSpec): number | undefined {
   if (!spec.temp) return undefined;
-  const preferred = spec.id === "z1" ? 20 : spec.id === "hwc" ? 50 : (spec.temp.min + spec.temp.max) / 2;
+  const preferred = spec.defaultTemp ?? (spec.temp.min + spec.temp.max) / 2;
   return clampTemp(preferred, spec.temp);
 }
 

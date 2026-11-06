@@ -24,7 +24,7 @@ export interface Slot {
 
 export type Week = Record<Day, Slot[]>;
 
-export type ProgramId = "z1" | "hwc" | "cc";
+export type ProgramId = "z1" | "z2" | "z3" | "hwc" | "cc";
 
 export interface TempRange {
   min: number;
@@ -40,4 +40,8 @@ export interface ProgramSpec {
   temp: TempRange | null;
   /** Below this a warning is shown (does not block). */
   lowTempWarning?: number;
+  /** Temperature of a new slot when there is no previous slot to copy. */
+  defaultTemp?: number;
+  /** Heating zones: ebusd message with the zone's set-back temperature, e.g. `Z1NightTemp`. */
+  setbackMessage?: string;
 }

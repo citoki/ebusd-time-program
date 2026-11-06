@@ -2,9 +2,11 @@ import type { ProgramSpec } from "../model/types.js";
 
 export type TempBand = "cold" | "mid" | "warm";
 
-/** Thresholds per program: Z1 room temperature, HWC water temperature. */
+/** Thresholds per program: zone room temperature, HWC water temperature. */
 const BANDS: Record<string, [number, number]> = {
   z1: [17.5, 22],
+  z2: [17.5, 22],
+  z3: [17.5, 22],
   hwc: [45, 55],
 };
 

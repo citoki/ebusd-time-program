@@ -1,5 +1,5 @@
 import { countField, FIELD } from "../../src/adapters/mqtt.js";
-import { entityId, resolveConfig, setbackEntityId } from "../../src/config.js";
+import { entityId, resolveConfig } from "../../src/config.js";
 import type { HassEntity } from "../../src/hass.js";
 import { readMessage } from "../../src/model/payload.js";
 import { MAX_SLOTS, PROGRAMS } from "../../src/model/programs.js";
@@ -12,7 +12,8 @@ import { DAYS, type ProgramId, type Slot, type Week } from "../../src/model/type
 const week = (workday: Slot[], weekend: Slot[]): Week =>
   Object.fromEntries(DAYS.map((d) => [d, d === "saturday" || d === "sunday" ? weekend : workday])) as Week;
 
-export const SAMPLE_WEEKS: Record<ProgramId, Week> = {
+/** A system with one heating zone (no Z2/Z3 sensors), like most installations. */
+export const SAMPLE_WEEKS: Partial<Record<ProgramId, Week>> = {
   z1: week(
     [
       { start: "06:00", end: "08:00", temp: 21 },
@@ -36,19 +37,24 @@ export const SAMPLE_WEEKS: Record<ProgramId, Week> = {
   ),
 };
 
+/** A second zone, for tests of systems that have one. */
+export const SAMPLE_Z2: Week = week([{ start: "17:00", end: "21:00", temp: 20 }], [{ start: "09:00", end: "21:00", temp: 20 }]);
+
 export const SAMPLE_SETBACK = "17.0";
 
 const UPDATED = "2026-01-01T12:00:00+00:00";
 
 /** Sensor states as `hass.states` holds them; a fresh copy on each call. */
-export function sampleStates(): Record<string, HassEntity> {
+export function sampleStates(weeks: Partial<Record<ProgramId, Week>> = SAMPLE_WEEKS): Record<string, HassEntity> {
   const cfg = resolveConfig({ type: "custom:ebusd-time-program-card" });
   const states: Record<string, HassEntity> = {};
   const set = (id: string, state: string) => {
     states[id] = { entity_id: id, state, attributes: {}, last_changed: UPDATED, last_updated: UPDATED };
   };
   for (const spec of Object.values(PROGRAMS)) {
-    const days = SAMPLE_WEEKS[spec.id];
+    const days = weeks[spec.id];
+    if (!days) continue;
+    if (spec.setbackMessage) set(entityId(cfg, spec.setbackMessage, "").replace(/_+$/, ""), SAMPLE_SETBACK);
     DAYS.forEach((day, i) => {
       set(entityId(cfg, `${spec.messagePrefix}_Timeframes`, countField(i)), String(days[day].length));
       // ebusd reads unused slots as 00:00–00:00 without a temperature
@@ -61,6 +67,5 @@ export function sampleStates(): Record<string, HassEntity> {
       }
     });
   }
-  set(setbackEntityId(cfg), SAMPLE_SETBACK);
   return states;
 }

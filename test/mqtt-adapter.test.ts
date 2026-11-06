@@ -3,7 +3,7 @@ import { detectCountMessage, programFingerprint, readProgram } from "../src/adap
 import { accentStyle, ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
 import type { Hass } from "../src/hass.js";
 import { PROGRAMS } from "../src/model/programs.js";
-import { SAMPLE_SETBACK, SAMPLE_WEEKS, sampleStates } from "./fixtures/hass-states.js";
+import { SAMPLE_SETBACK, SAMPLE_WEEKS, SAMPLE_Z2, sampleStates } from "./fixtures/hass-states.js";
 
 const live = (): Hass => ({ states: sampleStates() });
 const cfg = resolveConfig({ type: "custom:ebusd-time-program-card" });
@@ -12,10 +12,23 @@ const { z1, hwc, cc } = PROGRAMS;
 describe("config", () => {
   it("derives the Z1 set-back sensor (single value, no field suffix)", () => {
     const cfg = resolveConfig({ type: "x" });
-    expect(setbackEntityId(cfg)).toBe("sensor.ebusd_ctlv2_z1nighttemp");
-    expect(sampleStates()[setbackEntityId(cfg)]?.state).toBe(SAMPLE_SETBACK);
-    expect(setbackEntityId(resolveConfig({ type: "x", mqtt_prefix: "vaillant" }))).toBe("sensor.vaillant_ctlv2_z1nighttemp");
-    expect(setbackEntityId(resolveConfig({ type: "x", setback_entity: "sensor.my_setback" }))).toBe("sensor.my_setback");
+    const z1Of = (c: ReturnType<typeof resolveConfig>) => setbackEntityId(c, c.programs[0]!);
+    expect(z1Of(cfg)).toBe("sensor.ebusd_ctlv2_z1nighttemp");
+    expect(sampleStates()[z1Of(cfg)!]?.state).toBe(SAMPLE_SETBACK);
+    expect(z1Of(resolveConfig({ type: "x", mqtt_prefix: "vaillant" }))).toBe("sensor.vaillant_ctlv2_z1nighttemp");
+    expect(z1Of(resolveConfig({ type: "x", setback_entity: "sensor.my_setback" }))).toBe("sensor.my_setback");
+  });
+
+  it("set-back entity per zone; none for HWC and CC", () => {
+    const c = resolveConfig({ type: "x", programs: ["z1", { id: "z2", setback_entity: "sensor.z2_setback" }, "z3", "hwc", "cc"], setback_entity: "sensor.z1_setback" });
+    expect(c.programs.map((p) => setbackEntityId(c, p))).toEqual([
+      "sensor.z1_setback",
+      "sensor.z2_setback",
+      "sensor.ebusd_ctlv2_z3nighttemp",
+      null,
+      null,
+    ]);
+    expect(c.programs.map((p) => p.name)).toEqual(["Zone 1", "Zone 2", "Zone 3", "Hot water", "Circulation"]);
   });
 
   it("theme: brand by default, HA theme on request; accent overrides the colour", () => {
@@ -25,6 +38,12 @@ describe("config", () => {
     expect(accentStyle(cfg)).toBe("");
     expect(accentStyle(resolveConfig({ type: "x", accent: "" }))).toBe("");
     expect(accentStyle(resolveConfig({ type: "x", theme: "default", accent: "#e07a1f" }))).toBe("--etp-accent:#e07a1f");
+  });
+
+  it("layout: auto by default, wide or narrow on request", () => {
+    expect(cfg.layout).toBe("auto");
+    expect(resolveConfig({ type: "x", layout: "wide" }).layout).toBe("wide");
+    expect(() => resolveConfig({ type: "x", layout: "full" as never })).toThrow('Unknown layout "full"');
   });
 
   it("defaults", () => {
@@ -59,7 +78,7 @@ describe("config", () => {
   });
   it.each([
     [{ programs: [] }, "non-empty"],
-    [{ programs: ["z2"] }, "Unknown program"],
+    [{ programs: ["z4"] }, "Unknown program"],
     [{ programs: ["cc", "cc"] }, "twice"],
   ])("rejects %j", (extra, msg) => {
     expect(() => resolveConfig({ type: "x", ...(extra as object) })).toThrow(ConfigError);
@@ -81,6 +100,18 @@ describe("readProgram with ebusd sensor states", () => {
     expect(hass.states["sensor.ebusd_ctlv2_hwctimer_monday1_htm"]?.state).toBe("00:00");
     expect(hass.states["sensor.ebusd_ctlv2_hwctimer_monday1_slottemp"]?.state).toBe("unknown");
     expect(readProgram(hass, cfg, hwc).days.monday).toEqual([{ start: "05:30", end: "07:00", temp: 50 }]);
+  });
+  it("Z2 on a system that has it: Z2Timer_* sensors are read like Z1", () => {
+    const r = readProgram({ states: sampleStates({ ...SAMPLE_WEEKS, z2: SAMPLE_Z2 }) }, cfg, PROGRAMS.z2);
+    expect(r.status).toBe("ok");
+    expect(r.days).toEqual(SAMPLE_Z2);
+  });
+  it("Z2/Z3 on a system without them -> missing, with the entity looked for", () => {
+    for (const spec of [PROGRAMS.z2, PROGRAMS.z3]) {
+      const r = readProgram(live(), cfg, spec);
+      expect(r.status).toBe("missing");
+      expect(r.missing).toContain(`sensor.ebusd_ctlv2_${spec.id}timer_timeframes_slotcount`);
+    }
   });
   it("one unavailable sensor -> that day null, program loading", () => {
     const hass = live();

@@ -4,12 +4,16 @@ import type { ProgramId, ProgramSpec } from "./model/types.js";
 export type DefaultDays = "all" | "weekdays" | "weekend" | "today";
 export type CardTheme = "brand" | "default";
 export const THEMES: readonly CardTheme[] = ["brand", "default"];
+export type CardLayout = "auto" | "wide" | "narrow";
+export const LAYOUTS: readonly CardLayout[] = ["auto", "wide", "narrow"];
 
 export interface ProgramConfig {
   id: ProgramId;
   name?: string;
   /** Override the ebusd message prefix, e.g. for a renamed CSV. */
   message_prefix?: string;
+  /** Zones only: entity with the set-back temperature shown in the info text. */
+  setback_entity?: string;
 }
 
 /** YAML config of the card (snake_case like other HA cards). */
@@ -30,9 +34,11 @@ export interface CardConfig {
    * `default`: the HA theme, with its primary and accent colour.
    */
   theme?: CardTheme;
+  /** `auto` (default): two columns from 720 px card width; `wide` / `narrow` force one. */
+  layout?: CardLayout;
   /** Override the accent colour with any CSS colour, e.g. `"#e07a1f"`. */
   accent?: string;
-  /** Entity with the Z1 set-back temperature shown in the info text (default: the Z1NightTemp sensor). */
+  /** Z1 set-back temperature entity (default: the Z1NightTemp sensor); other zones set it per program. */
   setback_entity?: string;
   /** Seconds to wait per day for the controller to confirm a write (default 30). */
   verify_timeout?: number;
@@ -41,6 +47,8 @@ export interface CardConfig {
 export interface ResolvedProgram {
   spec: ProgramSpec;
   name: string;
+  /** Configured set-back entity; null = derive it from the entity template. */
+  setbackEntity: string | null;
 }
 
 export interface ResolvedConfig {
@@ -54,10 +62,9 @@ export interface ResolvedConfig {
   defaultDays: DefaultDays;
   showPreview: boolean;
   theme: CardTheme;
+  layout: CardLayout;
   /** Custom accent colour; null = the theme's. */
   accent: string | null;
-  /** null = derive from the entity template (`Z1NightTemp`). */
-  setbackEntity: string | null;
   verifyTimeout: number;
 }
 
@@ -78,12 +85,16 @@ export const COUNT_MESSAGE_CANDIDATES = ["Timeframes", "Timeslots"] as const;
 
 export const PROGRAM_NAMES: Record<ProgramId, string> = {
   z1: "Zone 1",
+  z2: "Zone 2",
+  z3: "Zone 3",
   hwc: "Hot water",
   cc: "Circulation",
 };
 
 export const PROGRAM_SHORT: Record<ProgramId, string> = {
   z1: "Z1",
+  z2: "Z2",
+  z3: "Z3",
   hwc: "HWC",
   cc: "CC",
 };
@@ -100,6 +111,10 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   if (!THEMES.includes(theme)) {
     throw new ConfigError(`Unknown theme "${String(theme)}" (supported: ${THEMES.join(", ")})`);
   }
+  const layout = config.layout ?? "auto";
+  if (!LAYOUTS.includes(layout)) {
+    throw new ConfigError(`Unknown layout "${String(layout)}" (supported: ${LAYOUTS.join(", ")})`);
+  }
   const seen = new Set<ProgramId>();
   const programs = entries.map((entry): ResolvedProgram => {
     const p: ProgramConfig = typeof entry === "string" ? { id: entry } : entry;
@@ -110,7 +125,8 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     if (seen.has(p.id)) throw new ConfigError(`Program "${p.id}" is listed twice`);
     seen.add(p.id);
     const spec = p.message_prefix ? { ...base, messagePrefix: p.message_prefix } : base;
-    return { spec, name: p.name ?? PROGRAM_NAMES[p.id] };
+    const setbackEntity = p.setback_entity ?? (p.id === "z1" ? config.setback_entity : undefined) ?? null;
+    return { spec, name: p.name ?? PROGRAM_NAMES[p.id], setbackEntity };
   });
   return {
     title: config.title ?? DEFAULTS.title,
@@ -123,8 +139,8 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     defaultDays: config.default_days ?? "weekdays",
     showPreview: config.show_preview ?? true,
     theme,
+    layout,
     accent: config.accent?.trim() || null,
-    setbackEntity: config.setback_entity ?? null,
     verifyTimeout: config.verify_timeout ?? 30,
   };
 }
@@ -134,15 +150,15 @@ export function accentStyle(cfg: ResolvedConfig): string {
   return cfg.accent ? `--etp-accent:${cfg.accent}` : "";
 }
 
-/** ebusd message holding the Z1 set-back temperature ("Absenktemperatur", register 0x9). */
-export const SETBACK_MESSAGE = "Z1NightTemp";
-
 /**
- * Entity of the Z1 set-back temperature. It is a single-value sensor, so the
- * `{field}` part of the template is empty: `sensor.ebusd_ctlv2_z1nighttemp`.
+ * Entity of a zone's set-back temperature ("Absenktemperatur", Z1: register 0x9);
+ * null for programs without one. It is a single-value sensor, so the `{field}`
+ * part of the template is empty: `sensor.ebusd_ctlv2_z1nighttemp`.
  */
-export function setbackEntityId(cfg: ResolvedConfig): string {
-  return cfg.setbackEntity ?? entityId(cfg, SETBACK_MESSAGE, "").replace(/_+$/, "");
+export function setbackEntityId(cfg: ResolvedConfig, program: ResolvedProgram): string | null {
+  if (program.setbackEntity) return program.setbackEntity;
+  const msg = program.spec.setbackMessage;
+  return msg ? entityId(cfg, msg, "").replace(/_+$/, "") : null;
 }
 
 /** Replace `{name}` placeholders; unknown placeholders are left as they are. */

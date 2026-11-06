@@ -1,4 +1,26 @@
-import { css } from "lit";
+import { css, unsafeCSS } from "lit";
+
+/** Two-column layout: days + preview left, slots + apply right. `b` selects the body. */
+const wideLayout = (b: string) =>
+  unsafeCSS(`
+    ${b} {
+      grid-template-columns: minmax(300px, 1fr) 1.2fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas: "days slots" "preview slots" "preview apply";
+      align-items: start;
+    }
+    ${b} .area-slots,
+    ${b} .area-apply {
+      border-left: 1px solid var(--etp-divider);
+      align-self: stretch;
+    }
+    ${b} .area-slots {
+      border-top: none;
+    }
+    ${b} .area-preview {
+      grid-row: 2 / span 2;
+    }
+  `);
 
 export const cardStyles = css`
   /* theme: brand (default) - the card's own dark look, independent of the HA theme */
@@ -140,8 +162,8 @@ export const cardStyles = css`
   }
 
   /* ---------- layout ---------- */
-  /* narrow: days, slots, preview, apply stacked;
-     wide: days + preview left, slots + apply right */
+  /* layout narrow: days, slots, preview, apply stacked;
+     layout wide: two columns; layout auto: wide from 720px card width */
   .body {
     display: grid;
     grid-template-areas: "days" "slots" "preview" "apply";
@@ -162,24 +184,9 @@ export const cardStyles = css`
     border-top: 1px solid var(--etp-divider);
   }
   @container (min-width: 720px) {
-    .body {
-      grid-template-columns: minmax(300px, 1fr) 1.2fr;
-      grid-template-rows: auto 1fr auto;
-      grid-template-areas: "days slots" "preview slots" "preview apply";
-      align-items: start;
-    }
-    .area-slots,
-    .area-apply {
-      border-left: 1px solid var(--etp-divider);
-      align-self: stretch;
-    }
-    .area-slots {
-      border-top: none;
-    }
-    .area-preview {
-      grid-row: 2 / span 2;
-    }
+    ${wideLayout(".body.layout-auto")}
   }
+  ${wideLayout(".body.layout-wide")}
   .section {
     padding: 12px 16px;
   }

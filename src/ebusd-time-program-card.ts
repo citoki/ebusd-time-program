@@ -7,7 +7,7 @@ import { renderTabs } from "./components/program-tabs.js";
 import { renderSheet, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview } from "./components/week-preview.js";
-import { accentStyle, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
+import { accentStyle, DEFAULTS, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { ISSUE_MESSAGES, UI } from "./i18n/en.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
@@ -88,7 +88,8 @@ export class EbusdTimeProgramCard extends LitElement {
   declare _notice: string | null;
   declare _infoOpen: boolean;
   /** Z1 set-back temperature from HA, for the info text (null = unknown). */
-  declare _setback: number | null;
+  /** Set-back temperature per configured program (zones only). */
+  declare _setback: (number | null)[];
 
   private _cfg: ResolvedConfig | undefined;
   private _hass: Hass | undefined;
@@ -109,7 +110,7 @@ export class EbusdTimeProgramCard extends LitElement {
     this._job = null;
     this._notice = null;
     this._infoOpen = false;
-    this._setback = null;
+    this._setback = [];
   }
 
   // ---------- Lovelace API ----------
@@ -165,8 +166,17 @@ export class EbusdTimeProgramCard extends LitElement {
     return { columns: 12, min_columns: 6, rows: "auto" };
   }
 
+  /** Config of a newly added card: spells out the main options with their defaults. */
   static getStubConfig(): Partial<CardConfig> {
-    return { programs: ["z1", "hwc", "cc"] };
+    return {
+      title: DEFAULTS.title,
+      mqtt_prefix: DEFAULTS.prefix,
+      circuit: DEFAULTS.circuit,
+      programs: [...DEFAULTS.programs],
+      default_days: "weekdays",
+      theme: "brand",
+      layout: "auto",
+    };
   }
 
   // ---------- data ----------
@@ -176,13 +186,18 @@ export class EbusdTimeProgramCard extends LitElement {
     const cfg = this._cfg;
     const hass = this._hass;
     if (!cfg || !hass) return;
-    const setback = hass.states[setbackEntityId(cfg)]?.state;
-    const fp = cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#") + `#${setback}`;
+    const setback = cfg.programs.map((p) => {
+      const id = setbackEntityId(cfg, p);
+      return id ? hass.states[id]?.state : undefined;
+    });
+    const fp = cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#") + `#${setback.join("|")}`;
     if (fp === this._fingerprint) return;
     this._fingerprint = fp;
     this._reads = cfg.programs.map((p) => readProgram(hass, cfg, p.spec));
-    const value = setback === undefined ? NaN : Number.parseFloat(setback);
-    this._setback = Number.isFinite(value) ? value : null;
+    this._setback = setback.map((s) => {
+      const value = s === undefined ? NaN : Number.parseFloat(s);
+      return Number.isFinite(value) ? value : null;
+    });
   }
 
   private _context(cfg: ResolvedConfig): EditorContext {
@@ -411,11 +426,12 @@ export class EbusdTimeProgramCard extends LitElement {
         cfg.programs.map((_, i) => this._drafts[i] !== undefined),
         this._busy,
       )}
-      ${read?.status === "missing" ? this._renderMissing(read) : this._renderBody(cfg)}
+      ${read?.status === "missing" ? this._renderMissing(read, cfg.programs[this._active]!) : this._renderBody(cfg)}
     </ha-card>`;
   }
 
-  private _renderMissing(read: ProgramRead): TemplateResult {
+  private _renderMissing(read: ProgramRead, program: ResolvedProgram): TemplateResult {
+    const extraZone = program.spec.id === "z2" || program.spec.id === "z3";
     return html`<div class="section" role="alert">
       <p class="error">${UI.status.missing}</p>
       <p class="hint">${UI.missingLookedFor}</p>
@@ -423,6 +439,7 @@ export class EbusdTimeProgramCard extends LitElement {
         ${read.missing.map((id) => html`<li><code>${id}</code></li>`)}
       </ul>
       <p class="hint">${UI.missingHelp}</p>
+      ${extraZone ? html`<p class="hint">${UI.missingZone(program.name, program.spec.id)}</p>` : nothing}
     </div>`;
   }
 
@@ -437,7 +454,7 @@ export class EbusdTimeProgramCard extends LitElement {
     const previewDays: ProgramRead["days"] = { ...ctx.days };
     if (dirty) for (const d of plan.write) previewDays[d] = plan.slots;
 
-    return html`<div class="body ${busy ? "busy" : ""}">
+    return html`<div class="body layout-${cfg.layout} ${busy ? "busy" : ""}">
         <div class="area-days" ?inert=${busy}>
           ${renderDayPicker({ selected, onToggle: this._onToggle, onPreset: this._onPreset })}
         </div>
@@ -455,7 +472,7 @@ export class EbusdTimeProgramCard extends LitElement {
                 onEdit: this._onEdit,
                 onDelete: this._onDelete,
                 onAdd: this._onAdd,
-                info: infoText(spec, this._setback),
+                info: infoText(spec, this._setback[this._active] ?? null),
                 infoOpen: this._infoOpen,
                 onInfo: () => {
                   this._dismissSuccess();
@@ -554,7 +571,7 @@ const sameExact = (a: readonly Slot[], b: readonly Slot[]) =>
   a.length === b.length && a.every((s, i) => sameSlot(s, b[i]!));
 
 function infoText(spec: ProgramSpec, setback: number | null): string {
-  if (spec.id === "z1") return UI.hint.z1(setback);
+  if (spec.setbackMessage) return UI.hint.zone(setback);
   if (spec.id === "hwc") return UI.hint.hwc();
   return UI.hint.cc();
 }

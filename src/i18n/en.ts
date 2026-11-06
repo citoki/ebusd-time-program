@@ -48,7 +48,7 @@ export const UI = {
   showingFrom: "Showing",
   info: "About this time program",
   hint: {
-    z1: (setback: number | null) =>
+    zone: (setback: number | null) =>
       setback === null
         ? "Outside these slots the zone only heats to its set-back temperature (set on the controller)."
         : `Outside these slots the zone only heats to its set-back temperature of ${formatTemp(setback)} °C (set on the controller).`,
@@ -62,6 +62,7 @@ export const UI = {
   },
   missingLookedFor: "Looked for one of:",
   missingHelp: "Check mqtt_prefix, circuit and entity_template in the card configuration.",
+  missingZone: (name: string, id: string) => `If this system has no ${name}, remove ${id} from programs.`,
   startEmpty: "Start empty",
   unsaved: "unsaved changes",
   // slot editor
