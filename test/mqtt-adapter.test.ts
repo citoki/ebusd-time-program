@@ -3,6 +3,7 @@ import { detectCountMessage, programFingerprint, readProgram } from "../src/adap
 import { accentStyle, ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
 import type { Hass } from "../src/hass.js";
 import { uniformTemp } from "../src/components/week-preview.js";
+import { programName } from "../src/i18n/index.js";
 import { PROGRAMS } from "../src/model/programs.js";
 import { SAMPLE_SETBACK, SAMPLE_WEEKS, SAMPLE_Z2, sampleStates } from "./fixtures/hass-states.js";
 
@@ -29,7 +30,7 @@ describe("config", () => {
       null,
       null,
     ]);
-    expect(c.programs.map((p) => p.name)).toEqual(["Zone 1", "Zone 2", "Zone 3", "Hot water", "Circulation"]);
+    expect(c.programs.map((p) => programName(p))).toEqual(["Zone 1", "Zone 2", "Zone 3", "Hot water", "Circulation"]);
   });
 
   it("theme: brand by default, HA theme on request; accent overrides the colour", () => {
@@ -68,7 +69,7 @@ describe("config", () => {
     expect(cfg.prefix).toBe("ebusd");
     expect(cfg.circuit).toBe("ctlv2");
     expect(cfg.programs.map((p) => p.spec.id)).toEqual(["z1", "hwc", "cc"]);
-    expect(cfg.programs[0]!.name).toBe("Zone 1");
+    expect(programName(cfg.programs[0]!)).toBe("Zone 1");
   });
   it("entity ids are lower-cased after the domain", () => {
     expect(entityId(cfg, "Z1Timer_Monday0", "htm_1")).toBe("sensor.ebusd_ctlv2_z1timer_monday0_htm_1");
@@ -89,7 +90,7 @@ describe("config", () => {
   });
   it("program options", () => {
     const c = resolveConfig({ type: "x", programs: ["cc", { id: "z1", name: "Living", message_prefix: "Hc1Timer" }] });
-    expect(c.programs.map((p) => [p.spec.id, p.name, p.spec.messagePrefix])).toEqual([
+    expect(c.programs.map((p) => [p.spec.id, programName(p), p.spec.messagePrefix])).toEqual([
       ["cc", "Circulation", "CcTimer"],
       ["z1", "Living", "Hc1Timer"],
     ]);

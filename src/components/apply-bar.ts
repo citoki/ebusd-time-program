@@ -1,5 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
-import { issueMessage, UI } from "../i18n/en.js";
+import { issueMessage, UI } from "../i18n/index.js";
 import type { Day } from "../model/types.js";
 import type { Issue } from "../model/validate.js";
 import type { SlotDelta, WritePlan } from "../model/week.js";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { issueMessage } from "../src/i18n/en.js";
+import { issueMessage } from "../src/i18n/index.js";
 import { PROGRAMS } from "../src/model/programs.js";
 import { hasErrors, validateDay, validateSelection, type Issue } from "../src/model/validate.js";
 

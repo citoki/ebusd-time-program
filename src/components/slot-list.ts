@@ -1,5 +1,5 @@
 import { html, nothing, svg, type TemplateResult } from "lit";
-import { formatTemp, issueMessage, UI } from "../i18n/en.js";
+import { formatTemp, issueMessage, UI } from "../i18n/index.js";
 import { MAX_SLOTS } from "../model/programs.js";
 import type { ProgramSpec, Slot } from "../model/types.js";
 import type { Issue } from "../model/validate.js";

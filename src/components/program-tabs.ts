@@ -1,7 +1,7 @@
 import { html, type TemplateResult } from "lit";
 import type { ReadStatus } from "../adapters/mqtt.js";
-import { PROGRAM_SHORT, type ResolvedProgram } from "../config.js";
-import { UI } from "../i18n/en.js";
+import type { ResolvedProgram } from "../config.js";
+import { programName, UI } from "../i18n/index.js";
 
 export function renderTabs(
   programs: readonly ResolvedProgram[],
@@ -30,13 +30,13 @@ export function renderTabs(
           tabindex=${i === active ? 0 : -1}
           ?disabled=${disabled}
           title=${statuses[i] === "missing" || statuses[i] === "offline"
-            ? `${p.name}: ${UI.status[statuses[i]]}`
+            ? `${programName(p)}: ${UI.status[statuses[i]]}`
             : dirty[i]
-              ? `${p.name} (${UI.unsaved})`
-              : p.name}
+              ? `${programName(p)} (${UI.unsaved})`
+              : programName(p)}
           @click=${() => onSelect(i)}
         >
-          ${PROGRAM_SHORT[p.spec.id]}${dirty[i]
+          ${UI.programShort[p.spec.id]}${dirty[i]
             ? html`<span class="tab-dirty" aria-label=${UI.unsaved}> •</span>`
             : ""}
         </button>`,

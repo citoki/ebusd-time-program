@@ -23,7 +23,10 @@ export interface ProgramConfig {
 /** YAML config of the card (snake_case like other HA cards). */
 export interface CardConfig {
   type: string;
+  /** Card title; default: "Weekly schedule" in the card's language. */
   title?: string;
+  /** UI language, e.g. `de`, `en-GB`; default: the HA user's language. */
+  language?: string;
   mqtt_prefix?: string;
   circuit?: string;
   topic_template?: string;
@@ -59,13 +62,17 @@ export interface CardConfig {
 
 export interface ResolvedProgram {
   spec: ProgramSpec;
-  name: string;
+  /** Configured name; null = the program's name in the card's language (programName()). */
+  name: string | null;
   /** Configured set-back entity; null = derive it from the entity template. */
   setbackEntity: string | null;
 }
 
 export interface ResolvedConfig {
-  title: string;
+  /** null = the default title in the card's language. */
+  title: string | null;
+  /** null = follow HA's language. */
+  language: string | null;
   prefix: string;
   circuit: string;
   topicTemplate: string;
@@ -85,7 +92,6 @@ export interface ResolvedConfig {
 }
 
 export const DEFAULTS = {
-  title: "Weekly schedule",
   prefix: "ebusd",
   circuit: "ctlv2",
   topicTemplate: "{prefix}/{circuit}/{message}/{action}",
@@ -98,22 +104,6 @@ export const DEFAULTS = {
  * configs use `*Timer_Timeframes`; the `.tsp` source names it `*Timer_Timeslots`.
  */
 export const COUNT_MESSAGE_CANDIDATES = ["Timeframes", "Timeslots"] as const;
-
-export const PROGRAM_NAMES: Record<ProgramId, string> = {
-  z1: "Zone 1",
-  z2: "Zone 2",
-  z3: "Zone 3",
-  hwc: "Hot water",
-  cc: "Circulation",
-};
-
-export const PROGRAM_SHORT: Record<ProgramId, string> = {
-  z1: "Z1",
-  z2: "Z2",
-  z3: "Z3",
-  hwc: "HWC",
-  cc: "CC",
-};
 
 export class ConfigError extends Error {}
 
@@ -150,10 +140,11 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     seen.add(p.id);
     const spec = p.message_prefix ? { ...base, messagePrefix: p.message_prefix } : base;
     const setbackEntity = p.setback_entity ?? (p.id === "z1" ? config.setback_entity : undefined) ?? null;
-    return { spec, name: p.name ?? PROGRAM_NAMES[p.id], setbackEntity };
+    return { spec, name: p.name ?? null, setbackEntity };
   });
   return {
-    title: config.title ?? DEFAULTS.title,
+    title: config.title ?? null,
+    language: config.language?.trim() || null,
     prefix: config.mqtt_prefix ?? DEFAULTS.prefix,
     circuit: config.circuit ?? DEFAULTS.circuit,
     topicTemplate: config.topic_template ?? DEFAULTS.topicTemplate,

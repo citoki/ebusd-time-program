@@ -10,6 +10,8 @@ export interface HassEntity {
 export interface Hass {
   states: Record<string, HassEntity | undefined>;
   language?: string;
+  /** Newer HA: the user's language setting. */
+  locale?: { language?: string };
   callService?: (domain: string, service: string, data?: Record<string, unknown>) => Promise<unknown>;
 }
 

@@ -1,5 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
-import { formatTemp, issueMessage, UI } from "../i18n/en.js";
+import { formatTemp, issueMessage, UI } from "../i18n/index.js";
 import { stepPart, stepTemp, stepTime, timeBounds, type TimeField } from "../model/edit.js";
 import { fromMinutes } from "../model/time.js";
 import type { ProgramSpec } from "../model/types.js";

@@ -1,26 +1,35 @@
-import type { Issue, IssueCode } from "../model/validate.js";
+import type { IssueCode } from "../model/validate.js";
+import { formatTemp } from "./format.js";
 
-type Params = Record<string, string | number>;
+export type Params = Record<string, string | number>;
+type Field = "start" | "end" | "temp";
 
-/** English validation messages. More languages are added later as sibling files. */
-export const ISSUE_MESSAGES: Record<IssueCode, (p: Params) => string> = {
-  invalid_time: (p) => `Invalid time "${p.value}"`,
-  off_grid: () => "Time must be on a 10-minute step",
-  start_24: () => "24:00 is only allowed as end time",
-  end_before_start: () => "End must be after start",
-  overlap: (p) => `Overlaps with slot ${p.other} (${p.range})`,
-  too_many_slots: (p) => `Maximum of ${p.max} slots reached`,
-  temp_missing: () => "Temperature is required",
-  temp_range: (p) => `Temperature must be between ${p.min} and ${p.max} °C`,
-  temp_rounded: (p) => `Will be rounded to ${formatTemp(Number(p.value))} °C when saved`,
-  temp_low: () => "Low temperature – intended?",
-  mergeable: (p) => `Slots ${p.a} and ${p.b} touch – could be merged`,
-  no_days: () => "Select at least one day",
-};
+const FIELD: Record<Field, string> = { start: "Start", end: "End", temp: "Temperature" };
 
-const UI_FIELD = { start: "Start", end: "End", temp: "Temperature" } as const;
-
-export const UI = {
+/**
+ * English UI texts; the shape of every other language (`Strings`). Plain
+ * strings or small functions for counts and values. Temperatures go through
+ * formatTemp() so they get the language's decimal separator.
+ */
+export const en = {
+  // card and program names (used when the YAML does not set them)
+  defaultTitle: "Weekly schedule",
+  programNames: { z1: "Zone 1", z2: "Zone 2", z3: "Zone 3", hwc: "Hot water", cc: "Circulation" },
+  programShort: { z1: "Z1", z2: "Z2", z3: "Z3", hwc: "HWC", cc: "CC" },
+  issues: {
+    invalid_time: (p) => `Invalid time "${p.value}"`,
+    off_grid: () => "Time must be on a 10-minute step",
+    start_24: () => "24:00 is only allowed as end time",
+    end_before_start: () => "End must be after start",
+    overlap: (p) => `Overlaps with slot ${p.other} (${p.range})`,
+    too_many_slots: (p) => `Maximum of ${p.max} slots reached`,
+    temp_missing: () => "Temperature is required",
+    temp_range: (p) => `Temperature must be between ${p.min} and ${p.max} °C`,
+    temp_rounded: (p) => `Will be rounded to ${formatTemp(Number(p.value))} °C when saved`,
+    temp_low: () => "Low temperature – intended?",
+    mergeable: (p) => `Slots ${p.a} and ${p.b} touch – could be merged`,
+    no_days: () => "Select at least one day",
+  } as Record<IssueCode, (p: Params) => string>,
   days: "Days",
   quickSelect: "Quick select",
   preview: "Preview",
@@ -73,10 +82,10 @@ export const UI = {
   slotsLeft: (n: number) => `(${n} left)`,
   noGap: "No free time left on this day",
   deleteSlot: (n: number) => `Delete slot ${n}`,
-  editField: (field: "start" | "end" | "temp", n: number) => `${UI_FIELD[field]}, slot ${n}`,
+  editField: (field: Field, n: number) => `${FIELD[field]}, slot ${n}`,
   tempUnknown: "– °C",
   // sheets
-  sheetTitle: (field: "start" | "end" | "temp", n: number) => `${UI_FIELD[field]} · Slot ${n}`,
+  sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Slot ${n}`,
   hour: "Hour",
   minute: "Minute",
   up: (what: string) => `${what} up`,
@@ -130,12 +139,6 @@ export const UI = {
   otherCardBusy: "Another card is writing to the controller right now. Try again when it has finished.",
   leaveWarning: "The time program is still being written. Leaving now may leave days unchanged.",
   busyStatus: "Writing to the controller …",
-} as const;
+};
 
-export function issueMessage(issue: Issue): string {
-  return ISSUE_MESSAGES[issue.code](issue.params ?? {});
-}
-
-export function formatTemp(value: number): string {
-  return value.toFixed(1);
-}
+export type Strings = typeof en;

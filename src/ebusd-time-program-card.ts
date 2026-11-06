@@ -9,7 +9,7 @@ import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
 import { accentStyle, DEFAULTS, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
-import { formatTemp, ISSUE_MESSAGES, UI } from "./i18n/en.js";
+import { formatTemp, programName, setLanguage, UI } from "./i18n/index.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
 import { MAX_SLOTS } from "./model/programs.js";
 import { fromMinutes, toMinutes } from "./model/time.js";
@@ -185,7 +185,6 @@ export class EbusdTimeProgramCard extends LitElement {
   /** Config of a newly added card: spells out the main options with their defaults. */
   static getStubConfig(): Partial<CardConfig> {
     return {
-      title: DEFAULTS.title,
       mqtt_prefix: DEFAULTS.prefix,
       circuit: DEFAULTS.circuit,
       programs: [...DEFAULTS.programs],
@@ -421,6 +420,9 @@ export class EbusdTimeProgramCard extends LitElement {
   protected override render(): TemplateResult | typeof nothing {
     const cfg = this._cfg;
     if (!cfg) return nothing;
+    const lang = setLanguage(cfg.language ?? this._hass?.locale?.language ?? this._hass?.language);
+    // correct hyphenation, screen-reader voice and upper-casing (Greek drops accents)
+    if (this.lang !== lang) this.lang = lang;
     if (cfg.mode === "preview") return this._renderPreviewMode(cfg);
     const read = this._reads[this._active];
     const status = this._busy ? "busy" : (read?.status ?? "loading");
@@ -442,7 +444,7 @@ export class EbusdTimeProgramCard extends LitElement {
   private _renderHeader(cfg: ResolvedConfig, status: ReadStatus | "busy"): TemplateResult {
     const label = status === "busy" ? UI.busyStatus : UI.status[status];
     return html`<div class="header">
-      <h2 class="title">${cfg.title}</h2>
+      <h2 class="title">${cfg.title ?? UI.defaultTitle}</h2>
       <span class="status ${status}" role="img" aria-label=${label} title=${label}></span>
     </div>`;
   }
@@ -467,7 +469,8 @@ export class EbusdTimeProgramCard extends LitElement {
 
   private _renderPreviewOf(cfg: ResolvedConfig, index: number): TemplateResult {
     const program = cfg.programs[index]!;
-    const { spec, name } = program;
+    const { spec } = program;
+    const name = programName(program);
     const read = this._reads[index];
     if (read?.status === "missing") {
       if (!cfg.stacked) return this._renderMissing(read, program);
@@ -504,7 +507,7 @@ export class EbusdTimeProgramCard extends LitElement {
         ${read.missing.map((id) => html`<li><code>${id}</code></li>`)}
       </ul>
       <p class="hint">${UI.missingHelp}</p>
-      ${extraZone ? html`<p class="hint">${UI.missingZone(program.name, program.spec.id)}</p>` : nothing}
+      ${extraZone ? html`<p class="hint">${UI.missingZone(programName(program), program.spec.id)}</p>` : nothing}
     </div>`;
   }
 
@@ -527,7 +530,7 @@ export class EbusdTimeProgramCard extends LitElement {
           ${selected.length > 1 && !loading && !dirty ? this._renderBanner(ctx.base) : nothing}
           ${showEditor
             ? renderSlotList({
-                name: program.name,
+                name: programName(program),
                 spec,
                 // no slot count while it is not known
                 summary: `${selected.length ? selectionLabel(selected) : "–"}${loading ? "" : ` · ${UI.slot(slots.length)}`}`,
@@ -565,7 +568,7 @@ export class EbusdTimeProgramCard extends LitElement {
               ${this._job
                 ? renderBusyPanel({
                     job: this._job,
-                    programName: program.name,
+                    programName: programName(program),
                     verifyTimeoutS: cfg.verifyTimeout,
                     onCancel: this._onCancelJob,
                     onRetry: this._onRetry,
@@ -649,7 +652,7 @@ function sheetPatch(sheet: SheetState): Partial<Slot> {
 }
 
 function addBlocked(slots: readonly Slot[], spec: ProgramSpec): string | null {
-  if (slots.length >= MAX_SLOTS) return ISSUE_MESSAGES.too_many_slots({ max: MAX_SLOTS });
+  if (slots.length >= MAX_SLOTS) return UI.issues.too_many_slots({ max: MAX_SLOTS });
   return suggestSlot(slots, spec) ? null : UI.noGap;
 }
 

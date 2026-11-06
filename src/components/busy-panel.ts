@@ -1,5 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
-import { UI } from "../i18n/en.js";
+import { UI } from "../i18n/index.js";
 import type { Day } from "../model/types.js";
 import type { FailReason, JobItem, JobSnapshot } from "../write-job.js";
 

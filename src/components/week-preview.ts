@@ -1,5 +1,5 @@
 import { html, nothing, type TemplateResult } from "lit";
-import { formatTemp, UI } from "../i18n/en.js";
+import { formatTemp, shortTemp, UI } from "../i18n/index.js";
 import { MINUTES_PER_DAY, toMinutes } from "../model/time.js";
 import { DAYS, type Day, type ProgramSpec, type Slot } from "../model/types.js";
 
@@ -87,11 +87,6 @@ function renderSegment(slot: Slot, spec: ProgramSpec, labels: boolean): Template
   return html`<span class="seg ${spec.temp ? "heat" : ""}" style="left:${left}%;width:${width}%" title=${label}
     >${text}</span
   >`;
-}
-
-/** "21°", "21.5°" – compact label inside a bar. */
-function shortTemp(t: number): string {
-  return `${Number.isInteger(t) ? t : t.toFixed(1)}°`;
 }
 
 /** The detail line: `06:00–08:00 21.0 °C · 16:00–22:00 21.0 °C`. */

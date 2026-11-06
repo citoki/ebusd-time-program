@@ -1,3 +1,4 @@
+import { formatTemp } from "./i18n/format.js";
 import { topic, type ResolvedConfig } from "./config.js";
 import { buildDayPayloads, readMessage, writeMessage } from "./model/payload.js";
 import type { Day, ProgramSpec, Slot } from "./model/types.js";
@@ -166,7 +167,7 @@ export class WriteJob {
   }
 }
 
-const range = (s: Slot) => `${s.start}–${s.end}${s.temp !== undefined ? ` ${s.temp.toFixed(1)} °C` : ""}`;
+const range = (s: Slot) => `${s.start}–${s.end}${s.temp !== undefined ? ` ${formatTemp(s.temp)} °C` : ""}`;
 
 /** Describe why the read-back does not match (first difference). */
 export function mismatch(actual: Slot[] | null, expected: readonly Slot[]): FailReason {

@@ -1,5 +1,5 @@
 import { html, type TemplateResult } from "lit";
-import { UI } from "../i18n/en.js";
+import { UI } from "../i18n/index.js";
 import { DAYS, type Day } from "../model/types.js";
 import { PRESETS, presetOf, type Preset } from "../model/week.js";
 
