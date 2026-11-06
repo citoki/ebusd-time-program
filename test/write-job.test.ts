@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readProgram } from "../src/adapters/mqtt.js";
 import { resolveConfig } from "../src/config.js";
-import type { Hass, HassEntity } from "../src/hass.js";
+import type { Hass } from "../src/hass.js";
 import { PROGRAMS } from "../src/model/programs.js";
 import type { Day, ProgramSpec, Slot } from "../src/model/types.js";
 import { mismatch, restoreItems, retryItems, WriteJob, type JobSnapshot } from "../src/write-job.js";
 import { FakeEbusd, type FakeOptions } from "./fake-ebusd.js";
-import states from "./fixtures/hass-states.json" with { type: "json" };
+import { sampleStates } from "./fixtures/hass-states.js";
 
 const cfg = resolveConfig({ type: "x" });
 const { z1, cc } = PROGRAMS;
@@ -18,7 +18,7 @@ const newDay: Slot[] = [
 
 /** Wire a job to the fake: hass updates wake the verify loop, time is real but short. */
 function setup(spec: ProgramSpec, days: Day[], slots: Slot[], fake: FakeOptions = {}, timeout = 200) {
-  const ebusd = new FakeEbusd(cfg, states as Record<string, HassEntity>, fake);
+  const ebusd = new FakeEbusd(cfg, sampleStates(), fake);
   let hass: Hass = ebusd.hass();
   let waiters: (() => void)[] = [];
   ebusd.onUpdate = (h) => {
@@ -101,7 +101,7 @@ describe("WriteJob", () => {
     expect(result.items[1]!.reason).toEqual({
       code: "slot",
       index: 0,
-      actual: "06:30–11:30 25.0 °C",
+      actual: "06:00–08:00 21.0 °C",
       expected: "05:30–08:00 21.0 °C",
     });
     expect(ebusd.log.some((l) => l.topic.includes("Wednesday"))).toBe(false);

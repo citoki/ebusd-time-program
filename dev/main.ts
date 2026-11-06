@@ -1,8 +1,8 @@
 import "../src/ebusd-time-program-card.js";
 import { resolveConfig, type CardConfig } from "../src/config.js";
-import type { Hass, HassEntity } from "../src/hass.js";
+import type { Hass } from "../src/hass.js";
 import { FakeEbusd } from "../test/fake-ebusd.js";
-import states from "../test/fixtures/hass-states.json" with { type: "json" };
+import { sampleStates } from "../test/fixtures/hass-states.js";
 
 // URL params:
 //   tab=1  days=saturday,sunday  prefix=vaillant
@@ -18,7 +18,7 @@ if (prefix) config.mqtt_prefix = prefix;
 const timeout = params.get("timeout");
 if (timeout) config.verify_timeout = Number(timeout);
 
-const ebusd = new FakeEbusd(resolveConfig(config), states as Record<string, HassEntity>, {
+const ebusd = new FakeEbusd(resolveConfig(config), sampleStates(), {
   delay: Number(params.get("delay") ?? 300),
   ignoreWrites: new Set((params.get("ignore") ?? "").split(",").filter(Boolean)),
 });

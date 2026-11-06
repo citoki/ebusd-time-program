@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { detectCountMessage, programFingerprint, readProgram } from "../src/adapters/mqtt.js";
 import { ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
-import type { Hass, HassEntity } from "../src/hass.js";
+import type { Hass } from "../src/hass.js";
 import { PROGRAMS } from "../src/model/programs.js";
-import states from "./fixtures/hass-states.json" with { type: "json" };
+import { SAMPLE_SETBACK, SAMPLE_WEEKS, sampleStates } from "./fixtures/hass-states.js";
 
-/** Real sensor states from HA restore_state, 2026-11-04 (189 sensors). */
-const live = (): Hass => ({ states: structuredClone(states) as Record<string, HassEntity> });
+const live = (): Hass => ({ states: sampleStates() });
 const cfg = resolveConfig({ type: "custom:ebusd-time-program-card" });
 const { z1, hwc, cc } = PROGRAMS;
 
@@ -14,7 +13,7 @@ describe("config", () => {
   it("derives the Z1 set-back sensor (single value, no field suffix)", () => {
     const cfg = resolveConfig({ type: "x" });
     expect(setbackEntityId(cfg)).toBe("sensor.ebusd_ctlv2_z1nighttemp");
-    expect((states as Record<string, HassEntity>)[setbackEntityId(cfg)]?.state).toBe("15.0");
+    expect(sampleStates()[setbackEntityId(cfg)]?.state).toBe(SAMPLE_SETBACK);
     expect(setbackEntityId(resolveConfig({ type: "x", mqtt_prefix: "vaillant" }))).toBe("sensor.vaillant_ctlv2_z1nighttemp");
     expect(setbackEntityId(resolveConfig({ type: "x", setback_entity: "sensor.my_setback" }))).toBe("sensor.my_setback");
   });
@@ -59,30 +58,20 @@ describe("config", () => {
   });
 });
 
-describe("readProgram with live sensor states", () => {
+describe("readProgram with ebusd sensor states", () => {
   it("detects Timeframes as count message", () => {
     expect(detectCountMessage(live(), cfg, z1)).toBe("Timeframes");
   });
-  it("Z1: Mo–Fr 06:30–11:30 / 14:00–21:30, weekend 08:00–11:30 / 14:00–21:30, 25 °C", () => {
-    const r = readProgram(live(), cfg, z1);
+  it.each([z1, hwc, cc])("$id: reads the whole week", (spec) => {
+    const r = readProgram(live(), cfg, spec);
     expect(r.status).toBe("ok");
-    expect(r.days.monday).toEqual([
-      { start: "06:30", end: "11:30", temp: 25 },
-      { start: "14:00", end: "21:30", temp: 25 },
-    ]);
-    expect(r.days.saturday![0]).toEqual({ start: "08:00", end: "11:30", temp: 25 });
+    expect(r.days).toEqual(SAMPLE_WEEKS[spec.id]);
   });
-  it("HWC: one slot with 55.5 °C", () => {
-    const r = readProgram(live(), cfg, hwc);
-    expect(r.status).toBe("ok");
-    expect(r.days.monday).toEqual([{ start: "11:00", end: "15:00", temp: 55.5 }]);
-  });
-  it("CC: Sunday as restored after the write test", () => {
-    const r = readProgram(live(), cfg, cc);
-    expect(r.days.sunday).toEqual([
-      { start: "10:10", end: "10:20" },
-      { start: "14:10", end: "14:20" },
-    ]);
+  it("unused slots (00:00–00:00, temperature unknown) are not returned", () => {
+    const hass = live();
+    expect(hass.states["sensor.ebusd_ctlv2_hwctimer_monday1_htm"]?.state).toBe("00:00");
+    expect(hass.states["sensor.ebusd_ctlv2_hwctimer_monday1_slottemp"]?.state).toBe("unknown");
+    expect(readProgram(hass, cfg, hwc).days.monday).toEqual([{ start: "05:30", end: "07:00", temp: 50 }]);
   });
   it("one unavailable sensor -> that day null, program loading", () => {
     const hass = live();
