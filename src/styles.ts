@@ -628,10 +628,12 @@ export const cardStyles = css`
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* room for the focus rings of the arrows and the value */
+    gap: 6px;
   }
   .spin-btn {
-    width: 64px;
-    height: 40px;
+    width: 56px;
+    height: 32px;
     border: none;
     border-radius: 10px;
     background: none;
@@ -640,6 +642,9 @@ export const cardStyles = css`
   .spin-btn:hover:not(:disabled) {
     background: var(--etp-surface-2);
     color: var(--etp-text);
+  }
+  .spin-btn:focus-visible {
+    outline-offset: 0;
   }
   .spin-btn:disabled {
     opacity: 0.3;
