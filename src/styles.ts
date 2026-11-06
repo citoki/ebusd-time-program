@@ -777,7 +777,8 @@ export const cardStyles = css`
   /* ---------- week preview ---------- */
   .week {
     display: grid;
-    grid-template-columns: 2.8em 1fr;
+    /* day column only as wide as dot + longest day name */
+    grid-template-columns: max-content 1fr;
     row-gap: 6px;
     column-gap: 8px;
     align-items: center;
