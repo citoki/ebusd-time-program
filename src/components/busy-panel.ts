@@ -38,7 +38,7 @@ export function reasonText(reason: FailReason | undefined, timeoutS: number): st
   }
 }
 
-/** Progress (PLAN.md §4.5) while a job runs, and its result afterwards. Replaces the ApplyBar. */
+/** Progress of a write job while it runs, and its result afterwards. Replaces the ApplyBar. */
 export function renderBusyPanel(p: BusyPanelProps): TemplateResult {
   const { job } = p;
   const total = job.items.length;

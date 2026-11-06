@@ -32,9 +32,9 @@ export class InvalidDayError extends Error {
 /**
  * Build the ordered `/set` payloads that rewrite one whole day.
  *
- * Verified on the controller (PLAN.md §8): a day is only applied when all slots
- * `0…count-1` arrive in order; partial writes are ACKed but ignored. An empty
- * day is a single `0;0;00:00;00:00`. Throws on invalid input (second safety net
+ * Verified on a VRC 720: a day is only applied when all slots `0…count-1`
+ * arrive in order; partial writes are ACKed but ignored. An empty day is a
+ * single message with count 0. Throws on invalid input (second safety net
  * behind the UI validation).
  */
 export function buildDayPayloads(spec: ProgramSpec, slots: readonly Slot[]): string[] {
@@ -43,8 +43,8 @@ export function buildDayPayloads(spec: ProgramSpec, slots: readonly Slot[]): str
 
   const sorted = normalizeSlots(slots, spec);
   if (sorted.length === 0) {
-    // CC verified by our own write (T5). For temperature programs this is
-    // exactly what the myVAILLANT app sends (traced 2026-11-05, Z1 Sunday:
+    // CC verified by writing it to the controller. For temperature programs
+    // this is exactly what the myVAILLANT app sends (traced 2026-11-05, Z1 Sunday:
     // `a6 00 00 06 00 00 0000 0000 0000`, temp 0x0000 = 0.0). The controller
     // then reads the empty slots back as `00:00;00:00;-`.
     return [spec.temp ? "0;0;00:00;00:00;0.0" : "0;0;00:00;00:00"];

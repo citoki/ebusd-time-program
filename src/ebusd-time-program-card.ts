@@ -288,7 +288,7 @@ export class EbusdTimeProgramCard extends LitElement {
     this._setDraft(undefined);
   };
 
-  // ---------- writing (PLAN.md §2.3/§2.4) ----------
+  // ---------- writing: one job at a time, card locked while it runs ----------
 
   private _onApply = () => {
     const cfg = this._cfg;

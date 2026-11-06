@@ -60,7 +60,10 @@ export const DEFAULTS = {
   programs: ["z1", "hwc", "cc"] as ProgramId[],
 } as const;
 
-/** Candidate names of the slot-count message, in detection order (PLAN.md §8). */
+/**
+ * Candidate names of the slot-count message, in detection order. Live ebusd
+ * configs use `*Timer_Timeframes`; the `.tsp` source names it `*Timer_Timeslots`.
+ */
 export const COUNT_MESSAGE_CANDIDATES = ["Timeframes", "Timeslots"] as const;
 
 export const PROGRAM_NAMES: Record<ProgramId, string> = {

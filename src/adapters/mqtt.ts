@@ -5,7 +5,10 @@ import { readMessage } from "../model/payload.js";
 import { MAX_SLOTS } from "../model/programs.js";
 import { DAYS, type Day, type ProgramSpec, type Slot } from "../model/types.js";
 
-/** Field sensor names created by ebusd's HA discovery (PLAN.md §8). */
+/**
+ * Field sensor names created by ebusd's HA discovery: start `htm`, end `htm_1`,
+ * temperature `slottemp`; the count message has one `slotcount[_n]` per day, Monday first.
+ */
 export const FIELD = { start: "htm", end: "htm_1", temp: "slottemp" } as const;
 export const countField = (dayIndex: number) => (dayIndex === 0 ? "slotcount" : `slotcount_${dayIndex}`);
 

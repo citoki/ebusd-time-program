@@ -7,7 +7,7 @@ import { DAYS, type Day, type ProgramSpec, type Slot } from "../src/model/types.
 
 /**
  * Simulates ebusd + VRC 720 behind HA's `mqtt.publish`, with the behaviour
- * verified on the real controller (PLAN.md §8):
+ * verified on a real VRC 720:
  * - a day is applied only when slots 0…count-1 arrive in order (partial writes are ignored),
  * - written values reach HA only after a `/get` of the count and slot messages.
  */

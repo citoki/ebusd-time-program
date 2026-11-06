@@ -124,8 +124,8 @@ export const cardStyles = css`
   }
 
   /* ---------- layout ---------- */
-  /* narrow: days, slots, preview stacked (PLAN.md §4.1);
-     wide: days + preview left, slots right (§4.6) */
+  /* narrow: days, slots, preview, apply stacked;
+     wide: days + preview left, slots + apply right */
   .body {
     display: grid;
     grid-template-areas: "days" "slots" "preview" "apply";
@@ -167,7 +167,7 @@ export const cardStyles = css`
   .section {
     padding: 12px 16px;
   }
-  /* locked while writing (PLAN.md §2.4); the areas are also inert */
+  /* locked while writing; the areas are also inert */
   .body.busy .area-days,
   .body.busy .area-slots,
   .body.busy .area-preview {

@@ -4,7 +4,7 @@ import type { Day, ProgramSpec, Slot } from "./model/types.js";
 import { normalizeSlots, sameSlots } from "./model/week.js";
 
 /**
- * Sequential writer (PLAN.md §2.3): one day after the other, all slots of a
+ * Sequential writer: one day after the other, all slots of a
  * day in order, then a read-back that must show the written values before the
  * next day starts. The controller ACKs partial or rejected writes without
  * applying them, so the read-back is the only real confirmation.

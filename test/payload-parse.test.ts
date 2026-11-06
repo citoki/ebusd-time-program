@@ -13,8 +13,8 @@ describe("message names", () => {
   });
 });
 
-describe("buildDayPayloads – payloads verified on the controller (PLAN.md §8)", () => {
-  it("T1: CC two slots, no constant field", () => {
+describe("buildDayPayloads – payloads verified on the controller", () => {
+  it("CC two slots, no constant field", () => {
     expect(
       buildDayPayloads(cc, [
         { start: "10:00", end: "10:30" },
@@ -22,7 +22,7 @@ describe("buildDayPayloads – payloads verified on the controller (PLAN.md §8)
       ]),
     ).toEqual(["0;2;10:00;10:30", "1;2;14:00;14:30"]);
   });
-  it("T2: three slots, every message carries the count", () => {
+  it("three slots, every message carries the count", () => {
     expect(
       buildDayPayloads(cc, [
         { start: "06:00", end: "06:10" },
@@ -31,10 +31,10 @@ describe("buildDayPayloads – payloads verified on the controller (PLAN.md §8)
       ]),
     ).toEqual(["0;3;06:00;06:10", "1;3;12:00;12:10", "2;3;18:00;18:10"]);
   });
-  it("T5: empty day", () => {
+  it("empty day", () => {
     expect(buildDayPayloads(cc, [])).toEqual(["0;0;00:00;00:00"]);
   });
-  it("T6: end 24:00", () => {
+  it("end 24:00", () => {
     expect(buildDayPayloads(cc, [{ start: "23:50", end: "24:00" }])).toEqual(["0;1;23:50;24:00"]);
   });
 });
