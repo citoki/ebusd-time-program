@@ -73,6 +73,12 @@ export const cardStyles = css`
     font-family: var(--ha-font-family-body, var(--paper-font-body1_-_font-family, system-ui, sans-serif));
   }
 
+  .picker-preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
   button {
     font: inherit;
     color: inherit;

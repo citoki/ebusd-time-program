@@ -26,6 +26,7 @@ import {
   type SelectionDraft,
   type WritePlan,
 } from "./model/week.js";
+import previewImage from "../assets/card-preview.webp?inline";
 import { cardStyles } from "./styles.js";
 import { restoreItems, retryItems, WriteJob, type JobKind, type JobSnapshot } from "./write-job.js";
 
@@ -107,6 +108,8 @@ export class EbusdTimeProgramCard extends LitElement {
   private _waiters: (() => void)[] = [];
   private _successTimer: ReturnType<typeof setTimeout> | undefined;
   private _clock: ReturnType<typeof setInterval> | undefined;
+  /** Rendered as a thumbnail in HA's "Add card" dialog: show a picture instead of live data. */
+  private _inPicker = false;
 
   constructor() {
     super();
@@ -151,6 +154,7 @@ export class EbusdTimeProgramCard extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this._inPicker = insideCardPicker(this);
     window.addEventListener("beforeunload", this._onBeforeUnload);
     this._now = new Date();
     this._clock = setInterval(() => (this._now = new Date()), 60_000);
@@ -419,6 +423,9 @@ export class EbusdTimeProgramCard extends LitElement {
 
   protected override render(): TemplateResult | typeof nothing {
     const cfg = this._cfg;
+    if (this._inPicker) {
+      return html`<ha-card class="picker-preview"><img src=${previewImage} alt="ebusd Time Program" /></ha-card>`;
+    }
     if (!cfg) return nothing;
     const lang = setLanguage(cfg.language ?? this._hass?.locale?.language ?? this._hass?.language);
     // correct hyphenation, screen-reader voice and upper-casing (Greek drops accents)
@@ -668,6 +675,15 @@ if (!customElements.get(CARD_TAG)) {
   customElements.define(CARD_TAG, EbusdTimeProgramCard);
 }
 
+/** True when the card sits (across shadow roots) inside HA's card picker. */
+function insideCardPicker(el: Element): boolean {
+  for (let node: Node | null = el; node; ) {
+    if (node instanceof Element && node.localName === "hui-card-picker") return true;
+    node = node instanceof ShadowRoot ? node.host : (node.parentNode ?? null);
+  }
+  return false;
+}
+
 declare global {
   interface Window {
     customCards?: { type: string; name: string; description: string; preview?: boolean }[];
@@ -683,7 +699,7 @@ if (!window.customCards.some((c) => c.type === CARD_TAG)) {
     type: CARD_TAG,
     name: "ebusd Time Program",
     description: "Weekly time programs of a Vaillant controller via ebusd – edit several days at once.",
-    preview: false,
+    preview: true,
   });
 }
 
