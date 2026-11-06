@@ -38,6 +38,7 @@ export const cardStyles = css`
     --etp-temp-warm: #c8512a;
     --etp-ok: #43a047;
     --etp-busy: #e0a030;
+    --etp-warn: #e8711c;
     --etp-error: #db4437;
     display: block;
   }
@@ -53,6 +54,7 @@ export const cardStyles = css`
     --etp-divider: var(--divider-color, rgba(0, 0, 0, 0.12));
     --etp-ok: var(--success-color, #43a047);
     --etp-busy: var(--warning-color, #ffa600);
+    --etp-warn: var(--warning-color, #ffa600);
     --etp-error: var(--error-color, #db4437);
   }
 
@@ -100,14 +102,19 @@ export const cardStyles = css`
   .status.ok {
     background: var(--etp-ok);
   }
+  /* entities not found: orange; ebusd offline: red; loading: grey, pulsing */
   .status.missing {
+    background: var(--etp-warn);
+  }
+  .status.offline {
     background: var(--etp-error);
   }
   .status.busy {
     background: var(--etp-busy);
   }
   @media (prefers-reduced-motion: no-preference) {
-    .status.busy {
+    .status.busy,
+    .status.loading {
       animation: etp-pulse 1.2s ease-in-out infinite;
     }
     .spinner {
@@ -766,6 +773,12 @@ export const cardStyles = css`
   }
   .error {
     color: var(--etp-error);
+  }
+  .warn {
+    color: var(--etp-warn);
+  }
+  .skeleton.unavailable p {
+    margin: 0 0 4px;
   }
   .mono {
     margin: 8px 0;

@@ -29,8 +29,8 @@ export function renderTabs(
           aria-selected=${i === active ? "true" : "false"}
           tabindex=${i === active ? 0 : -1}
           ?disabled=${disabled}
-          title=${statuses[i] === "missing"
-            ? `${p.name}: ${UI.status.missing}`
+          title=${statuses[i] === "missing" || statuses[i] === "offline"
+            ? `${p.name}: ${UI.status[statuses[i]]}`
             : dirty[i]
               ? `${p.name} (${UI.unsaved})`
               : p.name}

@@ -433,7 +433,7 @@ export class EbusdTimeProgramCard extends LitElement {
   private _renderMissing(read: ProgramRead, program: ResolvedProgram): TemplateResult {
     const extraZone = program.spec.id === "z2" || program.spec.id === "z3";
     return html`<div class="section" role="alert">
-      <p class="error">${UI.status.missing}</p>
+      <p class="warn">${UI.status.missing}</p>
       <p class="hint">${UI.missingLookedFor}</p>
       <ul class="mono">
         ${read.missing.map((id) => html`<li><code>${id}</code></li>`)}
@@ -464,8 +464,10 @@ export class EbusdTimeProgramCard extends LitElement {
             ? renderSlotList({
                 name: program.name,
                 spec,
-                summary: `${selected.length ? selectionLabel(selected) : "–"} · ${UI.slot(slots.length)}`,
+                // no slot count while it is not known
+                summary: `${selected.length ? selectionLabel(selected) : "–"}${loading ? "" : ` · ${UI.slot(slots.length)}`}`,
                 slots: loading ? null : slots,
+                unavailable: this._reads[this._active]?.status === "offline" ? UI.offlineHelp : undefined,
                 issues: ctx.issues,
                 changed: slots.map((s) => !ctx.base.slots.some((b) => sameSlot(s, b))),
                 addBlocked: addBlocked(slots, spec),

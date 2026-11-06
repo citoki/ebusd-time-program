@@ -58,8 +58,10 @@ export const UI = {
   status: {
     ok: "Connected – values from ebusd",
     loading: "Waiting for values from ebusd…",
+    offline: "ebusd not available",
     missing: "No ebusd entities found",
   },
+  offlineHelp: "All sensors of this program are unavailable. Check that the ebusd add-on is running and connected to MQTT.",
   missingLookedFor: "Looked for one of:",
   missingHelp: "Check mqtt_prefix, circuit and entity_template in the card configuration.",
   missingZone: (name: string, id: string) => `If this system has no ${name}, remove ${id} from programs.`,

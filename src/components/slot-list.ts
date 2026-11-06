@@ -13,6 +13,8 @@ export interface SlotListProps {
   summary: string;
   /** null = still loading. */
   slots: readonly Slot[] | null;
+  /** Shown instead of "Loading…" when the values cannot arrive (ebusd offline). */
+  unavailable?: string | undefined;
   /** validateDay() result for `slots` (indexes refer to `slots`). */
   issues: readonly Issue[];
   /** Per row: differs from what the controller has for the source day. */
@@ -51,7 +53,12 @@ export function renderSlotList(p: SlotListProps): TemplateResult {
         <span></span>
       </div>
       ${slots === null
-        ? html`<div class="skeleton">${UI.loading}</div>`
+        ? p.unavailable
+          ? html`<div class="skeleton unavailable" role="alert">
+              <p class="error">${UI.status.offline}</p>
+              <p class="hint">${p.unavailable}</p>
+            </div>`
+          : html`<div class="skeleton">${UI.loading}</div>`
         : html`<div role="list" aria-label=${name}>
             ${slots.length === 0
               ? html`<div class="empty" role="listitem">${UI.offAllDay}</div>`

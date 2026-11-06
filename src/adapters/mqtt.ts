@@ -12,7 +12,12 @@ import { DAYS, type Day, type ProgramSpec, type Slot } from "../model/types.js";
 export const FIELD = { start: "htm", end: "htm_1", temp: "slottemp" } as const;
 export const countField = (dayIndex: number) => (dayIndex === 0 ? "slotcount" : `slotcount_${dayIndex}`);
 
-export type ReadStatus = "ok" | "loading" | "missing";
+/**
+ * ok: every day readable; loading: some values not (yet) received;
+ * offline: every count sensor is `unavailable` (ebusd / MQTT down);
+ * missing: the entities do not exist in HA.
+ */
+export type ReadStatus = "ok" | "loading" | "offline" | "missing";
 
 export interface ProgramRead {
   status: ReadStatus;
@@ -79,7 +84,10 @@ export function readProgram(hass: Hass, cfg: ResolvedConfig, spec: ProgramSpec):
   });
 
   const complete = DAYS.every((d) => days[d] !== null);
-  return { status: complete ? "ok" : "loading", days, countMessage, missing: [] };
+  const offline = DAYS.every(
+    (_, i) => state(entityId(cfg, `${spec.messagePrefix}_${countMessage}`, countField(i))) === "unavailable",
+  );
+  return { status: complete ? "ok" : offline ? "offline" : "loading", days, countMessage, missing: [] };
 }
 
 /**

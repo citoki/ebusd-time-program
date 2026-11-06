@@ -113,6 +113,16 @@ describe("readProgram with ebusd sensor states", () => {
       expect(r.missing).toContain(`sensor.ebusd_ctlv2_${spec.id}timer_timeframes_slotcount`);
     }
   });
+  it("every sensor unavailable -> offline; unknown (not read yet) -> loading", () => {
+    const set = (state: string) => {
+      const hass = live();
+      for (const id of Object.keys(hass.states)) if (id.includes("_hwctimer_")) hass.states[id]!.state = state;
+      return readProgram(hass, cfg, hwc);
+    };
+    expect(set("unavailable").status).toBe("offline");
+    expect(set("unknown").status).toBe("loading");
+    expect(set("unavailable").days.monday).toBeNull();
+  });
   it("one unavailable sensor -> that day null, program loading", () => {
     const hass = live();
     hass.states["sensor.ebusd_ctlv2_z1timer_tuesday1_htm"]!.state = "unavailable";
