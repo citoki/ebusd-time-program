@@ -107,8 +107,28 @@ export class FakeEbusd {
     }
   }
 
-  private onGet(message: string): void {
+  /**
+   * Deliver controller values to HA right away, as if ebusd had read these
+   * messages (dev page: simulate values arriving). One HA update at the end.
+   */
+  deliver(messages: readonly string[]): void {
     const next = { ...this.states };
+    for (const m of messages) this.applyGet(next, m);
+    this.states = next;
+    this.onUpdate(this.hass());
+  }
+
+  /** Message names ebusd reads for a program: the count message, then each day's slots. */
+  readMessages(spec: ProgramSpec): string[] {
+    const count = `${spec.messagePrefix}_${detectCountMessage(this.hass(), this.cfg, spec) ?? "Timeframes"}`;
+    return [count, ...DAYS.flatMap((day) => Array.from({ length: MAX_SLOTS }, (_, s) => readMessage(spec, day, s)))];
+  }
+
+  private onGet(message: string): void {
+    this.deliver([message]);
+  }
+
+  private applyGet(next: Record<string, HassEntity>, message: string): void {
     for (const spec of Object.values(PROGRAMS)) {
       const countMessage = detectCountMessage(this.hass(), this.cfg, spec);
       if (message === `${spec.messagePrefix}_${countMessage}`) {
@@ -129,8 +149,6 @@ export class FakeEbusd {
         }
       }
     }
-    this.states = next;
-    this.onUpdate(this.hass());
   }
 }
 

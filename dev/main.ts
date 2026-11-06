@@ -3,6 +3,7 @@ import { resolveConfig, type CardConfig } from "../src/config.js";
 import type { Hass } from "../src/hass.js";
 import { FakeEbusd } from "../test/fake-ebusd.js";
 import { sampleStates } from "../test/fixtures/hass-states.js";
+import { mountScenarioBar } from "./scenarios.js";
 
 // URL params:
 //   tab=1  days=saturday,sunday  prefix=vaillant
@@ -10,6 +11,7 @@ import { sampleStates } from "../test/fixtures/hass-states.js";
 //   ignore=Z1Timer_Tuesday,...   writes the fake controller ACKs but never applies (-> failure)
 //   timeout=5            verify timeout in s (default 30)
 //   nomqtt=1             hass without callService
+//   state=startup|weekend|slot|offline|nohwc   start in a sensor-state scenario (toolbar on the page)
 //   programs=z1,z2,hwc   programs to show (the fake system has no Z2/Z3 sensors)
 //   layout=wide|narrow   force a layout (default auto)
 //   theme=default        HA theme instead of the brand look; ha=light fakes a light HA theme
@@ -81,3 +83,5 @@ for (const id of ["narrow", "wide"]) {
     }
   });
 }
+
+mountScenarioBar(ebusd, resolveConfig(config), params.get("state"));
