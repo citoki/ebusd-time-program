@@ -54,7 +54,7 @@ export function sampleStates(weeks: Partial<Record<ProgramId, Week>> = SAMPLE_WE
   for (const spec of Object.values(PROGRAMS)) {
     const days = weeks[spec.id];
     if (!days) continue;
-    if (spec.setbackMessage) set(entityId(cfg, spec.setbackMessage, "").replace(/_+$/, ""), SAMPLE_SETBACK);
+    if (spec.setbackMessages) set(entityId(cfg, spec.setbackMessages[0]!, "").replace(/_+$/, ""), SAMPLE_SETBACK);
     DAYS.forEach((day, i) => {
       set(entityId(cfg, `${spec.messagePrefix}_Timeframes`, countField(i)), String(days[day].length));
       // ebusd reads unused slots as 00:00–00:00 without a temperature

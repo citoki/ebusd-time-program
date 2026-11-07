@@ -42,6 +42,9 @@ export interface ProgramSpec {
   lowTempWarning?: number;
   /** Temperature of a new slot when there is no previous slot to copy. */
   defaultTemp?: number;
-  /** Heating zones: ebusd message with the zone's set-back temperature, e.g. `Z1NightTemp`. */
-  setbackMessage?: string;
+  /**
+   * Heating zones: ebusd messages with the zone's set-back temperature, first found wins.
+   * Upstream ebusd-configuration names it `Z1SetbackTemp`, older configs `Z1NightTemp`.
+   */
+  setbackMessages?: readonly string[];
 }

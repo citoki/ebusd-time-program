@@ -7,7 +7,7 @@ import { renderTabs } from "./components/program-tabs.js";
 import { renderSheet, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
-import { accentStyle, DEFAULTS, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
+import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { formatTemp, programName, setLanguage, UI } from "./i18n/index.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
@@ -209,7 +209,7 @@ export class EbusdTimeProgramCard extends LitElement {
     const hass = this._hass;
     if (!cfg || !hass) return;
     const setback = cfg.programs.map((p) => {
-      const id = setbackEntityId(cfg, p);
+      const id = setbackEntityId(cfg, p, hass.states);
       return id ? hass.states[id]?.state : undefined;
     });
     const fp = cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#") + `#${setback.join("|")}`;
@@ -368,7 +368,7 @@ export class EbusdTimeProgramCard extends LitElement {
     pageJobOwner = this;
     const program = this._active;
     const spec = cfg.programs[program]!.spec;
-    const countMessage = this._reads[program]?.countMessage ?? cfg.countMessage ?? "Timeframes";
+    const countMessage = this._reads[program]?.countMessage ?? cfg.countMessage ?? COUNT_MESSAGE_CANDIDATES[0];
     this._sheet = null;
     this._notice = null;
     const runner = new WriteJob(
@@ -651,7 +651,7 @@ const sameExact = (a: readonly Slot[], b: readonly Slot[]) =>
   a.length === b.length && a.every((s, i) => sameSlot(s, b[i]!));
 
 function infoText(spec: ProgramSpec, setback: number | null): string {
-  if (spec.setbackMessage) return UI.hint.zone(setback);
+  if (spec.setbackMessages) return UI.hint.zone(setback);
   if (spec.id === "hwc") return UI.hint.hwc();
   return UI.hint.cc();
 }

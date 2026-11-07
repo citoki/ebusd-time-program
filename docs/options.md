@@ -37,7 +37,7 @@ type: custom:ebusd-time-program-card
 | Option | Description | Default |
 |---|---|---|
 | `verify_timeout` | Seconds to wait per day for the controller to confirm a write | `30` |
-| `setback_entity` | Entity with the set-back temperature of zone 1, shown in the info text. Other zones: per program | `sensor.{prefix}_{circuit}_z1nighttemp` |
+| `setback_entity` | Entity with the set-back temperature of zone 1, shown in the info text. Other zones: per program | `sensor.{prefix}_{circuit}_z1setbacktemp`, else `…_z1nighttemp` |
 
 ## ebusd
 
@@ -76,7 +76,7 @@ programs:
     name: Ground floor
   - id: z2
     name: First floor
-    setback_entity: sensor.ebusd_ctlv2_z2nighttemp
+    setback_entity: sensor.ebusd_ctlv2_z2setbacktemp
   - hwc
 ```
 

@@ -15,10 +15,18 @@ describe("config", () => {
   it("derives the Z1 set-back sensor (single value, no field suffix)", () => {
     const cfg = resolveConfig({ type: "x" });
     const z1Of = (c: ReturnType<typeof resolveConfig>) => setbackEntityId(c, c.programs[0]!);
-    expect(z1Of(cfg)).toBe("sensor.ebusd_ctlv2_z1nighttemp");
+    expect(z1Of(cfg)).toBe("sensor.ebusd_ctlv2_z1setbacktemp");
     expect(sampleStates()[z1Of(cfg)!]?.state).toBe(SAMPLE_SETBACK);
-    expect(z1Of(resolveConfig({ type: "x", mqtt_prefix: "vaillant" }))).toBe("sensor.vaillant_ctlv2_z1nighttemp");
+    expect(z1Of(resolveConfig({ type: "x", mqtt_prefix: "vaillant" }))).toBe("sensor.vaillant_ctlv2_z1setbacktemp");
     expect(z1Of(resolveConfig({ type: "x", setback_entity: "sensor.my_setback" }))).toBe("sensor.my_setback");
+  });
+
+  it("set-back entity: upstream Z1SetbackTemp first, older Z1NightTemp as fallback", () => {
+    const c = resolveConfig({ type: "x" });
+    const z1 = c.programs[0]!;
+    expect(setbackEntityId(c, z1, { "sensor.ebusd_ctlv2_z1nighttemp": {} })).toBe("sensor.ebusd_ctlv2_z1nighttemp");
+    expect(setbackEntityId(c, z1, { "sensor.ebusd_ctlv2_z1setbacktemp": {}, "sensor.ebusd_ctlv2_z1nighttemp": {} })).toBe("sensor.ebusd_ctlv2_z1setbacktemp");
+    expect(setbackEntityId(c, z1, {})).toBe("sensor.ebusd_ctlv2_z1setbacktemp");
   });
 
   it("set-back entity per zone; none for HWC and CC", () => {
@@ -26,7 +34,7 @@ describe("config", () => {
     expect(c.programs.map((p) => setbackEntityId(c, p))).toEqual([
       "sensor.z1_setback",
       "sensor.z2_setback",
-      "sensor.ebusd_ctlv2_z3nighttemp",
+      "sensor.ebusd_ctlv2_z3setbacktemp",
       null,
       null,
     ]);
@@ -108,6 +116,14 @@ describe("config", () => {
 describe("readProgram with ebusd sensor states", () => {
   it("detects Timeframes as count message", () => {
     expect(detectCountMessage(live(), cfg, z1)).toBe("Timeframes");
+  });
+  it("prefers the current Timeslots when stale Timeframes entities linger", () => {
+    const hass = live();
+    for (const [id, s] of Object.entries(hass.states)) {
+      const current = id.replace("_z1timer_timeframes_", "_z1timer_timeslots_");
+      if (s && current !== id) hass.states[current] = { ...s, entity_id: current };
+    }
+    expect(detectCountMessage(hass, cfg, z1)).toBe("Timeslots");
   });
   it.each([z1, hwc, cc])("$id: reads the whole week", (spec) => {
     const r = readProgram(live(), cfg, spec);

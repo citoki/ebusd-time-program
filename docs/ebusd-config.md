@@ -10,8 +10,7 @@ automatically. For the time programs they are not complete yet, so you need a **
     For the VRC 720 (`15.ctlv2`) the upstream definitions currently
 
     - read only the **first slot** of each day (`Z1Timer_Monday0`, but no `…Monday1` and `…Monday2`),
-    - read and write hot water slots **without a temperature**,
-    - call the slot-count message `…Timer_Timeslots` (the card accepts this name too).
+    - read and write hot water slots **without a temperature**.
 
     The controller has up to three slots per day, with a temperature for zones and hot water. The card needs all
     of them, otherwise a program stays at **Waiting for values from eBUSd**.
@@ -73,7 +72,7 @@ Each program needs three kinds of messages in `15.ctlv2.csv`. `<P>` is the progr
 
 | Message | Direction | Fields the card uses |
 |---|---|---|
-| `<P>_Timeframes` (or `_Timeslots`) | read, polled | `slotcount`, `slotcount_1` … `slotcount_6` (Monday … Sunday) |
+| `<P>_Timeslots` (older configs: `_Timeframes`) | read, polled | `slotcount`, `slotcount_1` … `slotcount_6` (Monday … Sunday) |
 | `<P>_<Day>0`, `<P>_<Day>1`, `<P>_<Day>2` | read, polled | `htm` (start), `htm_1` (end), `slottemp` (not for circulation) |
 | `<P>_<Day>` | write | `slotindex`, `slotcount`, `htm`, `htm_1`, `slottemp` (circulation: a constant instead) |
 
@@ -85,7 +84,7 @@ These are the lines from the tested configuration. The other days only differ in
 id:
 
 ```csv
-r9,,,Z1Timer_Timeframes,timer count zone 1,,,b555,a40000,ign,,IGN:1,,,Number of configured slots per weekday,slotcount,,UCH,,,number of slots on a day,slotcount_1,,UCH,,,number of slots on a day,slotcount_2,,UCH,,,number of slots on a day,slotcount_3,,UCH,,,number of slots on a day,slotcount_4,,UCH,,,number of slots on a day,slotcount_5,,UCH,,,number of slots on a day,slotcount_6,,UCH,,,number of slots on a day,ign_1,,IGN:1,,,
+r9,,,Z1Timer_Timeslots,timer count zone 1,,,b555,a40000,ign,,IGN:1,,,Number of configured slots per weekday,slotcount,,UCH,,,number of slots on a day,slotcount_1,,UCH,,,number of slots on a day,slotcount_2,,UCH,,,number of slots on a day,slotcount_3,,UCH,,,number of slots on a day,slotcount_4,,UCH,,,number of slots on a day,slotcount_5,,UCH,,,number of slots on a day,slotcount_6,,UCH,,,number of slots on a day,ign_1,,IGN:1,,,
 r9,,,Z1Timer_Monday0,timer heating monday 1,,,b555,a500000000,ign,,IGN:1,,,,htm,,HTM,,,,htm_1,,HTM,,,,slottemp,,UIN,10,°C,desired temperature of a slot
 r9,,,Z1Timer_Monday1,timer heating monday 2,,,b555,a500000001,ign,,IGN:1,,,,htm,,HTM,,,,htm_1,,HTM,,,,slottemp,,UIN,10,°C,desired temperature of a slot
 r9,,,Z1Timer_Monday2,timer heating monday 3,,,b555,a500000002,ign,,IGN:1,,,,htm,,HTM,,,,htm_1,,HTM,,,,slottemp,,UIN,10,°C,desired temperature of a slot
@@ -109,7 +108,7 @@ All timer messages use `b555`. The id encodes program, day and slot:
 | `DD` day | `00` Monday … `06` Sunday |
 | `SS` slot | `00`, `01`, `02` |
 
-For example hot water: `HwcTimer_Timeframes` = `a40002`, `HwcTimer_Monday0` = `a500020000`,
+For example hot water: `HwcTimer_Timeslots` = `a40002`, `HwcTimer_Monday0` = `a500020000`,
 `HwcTimer_Monday` = `a6000200`. Zone 2: `Z2Timer_Monday0` = `a501000000`.
 
 ### Hot water and circulation
@@ -127,7 +126,8 @@ with about 70 polled messages for zone 1, hot water and circulation, a low prior
 values. This only holds with `--mqttvar=filter-seen=1` (see step 1). It takes a while after an eBUSd restart until all slots have been read once. After a write the card asks
 eBUSd to read that day again right away.
 
-Optional: `Z1NightTemp` (`Z2NightTemp`, …) for the set-back temperature in the card's info text.
+Optional: `Z1SetbackTemp` (`Z2SetbackTemp`, …) for the set-back temperature in the card's info text. Older
+configurations call it `Z1NightTemp`; the card finds either.
 
 ## 3. MQTT and Home Assistant discovery
 

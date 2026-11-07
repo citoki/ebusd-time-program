@@ -54,7 +54,7 @@ export interface CardConfig {
   temp_labels?: TempLabels;
   /** Override the accent colour with any CSS colour, e.g. `"#e07a1f"`. */
   accent?: string;
-  /** Z1 set-back temperature entity (default: the Z1NightTemp sensor); other zones set it per program. */
+  /** Z1 set-back temperature entity (default: the Z1SetbackTemp or Z1NightTemp sensor); other zones set it per program. */
   setback_entity?: string;
   /** Seconds to wait per day for the controller to confirm a write (default 30). */
   verify_timeout?: number;
@@ -100,10 +100,12 @@ export const DEFAULTS = {
 } as const;
 
 /**
- * Candidate names of the slot-count message, in detection order. Live ebusd
- * configs use `*Timer_Timeframes`; the `.tsp` source names it `*Timer_Timeslots`.
+ * Candidate names of the slot-count message, in detection order. The current
+ * ebusd-configuration names it `*Timer_Timeslots`, older generated configs
+ * `*Timer_Timeframes`. The current name goes first: after a rename the old
+ * entities can linger in Home Assistant (retained discovery) with stale values.
  */
-export const COUNT_MESSAGE_CANDIDATES = ["Timeframes", "Timeslots"] as const;
+export const COUNT_MESSAGE_CANDIDATES = ["Timeslots", "Timeframes"] as const;
 
 export class ConfigError extends Error {}
 
@@ -171,12 +173,14 @@ export function accentStyle(cfg: ResolvedConfig): string {
 /**
  * Entity of a zone's set-back temperature ("Absenktemperatur", Z1: register 0x9);
  * null for programs without one. It is a single-value sensor, so the `{field}`
- * part of the template is empty: `sensor.ebusd_ctlv2_z1nighttemp`.
+ * part of the template is empty: `sensor.ebusd_ctlv2_z1setbacktemp`. With `states`,
+ * the first candidate that exists wins (`…_z1setbacktemp`, then `…_z1nighttemp`);
+ * without, or when none exists, the first candidate.
  */
-export function setbackEntityId(cfg: ResolvedConfig, program: ResolvedProgram): string | null {
+export function setbackEntityId(cfg: ResolvedConfig, program: ResolvedProgram, states?: Record<string, unknown>): string | null {
   if (program.setbackEntity) return program.setbackEntity;
-  const msg = program.spec.setbackMessage;
-  return msg ? entityId(cfg, msg, "").replace(/_+$/, "") : null;
+  const ids = (program.spec.setbackMessages ?? []).map((msg) => entityId(cfg, msg, "").replace(/_+$/, ""));
+  return ids.find((id) => states?.[id] !== undefined) ?? ids[0] ?? null;
 }
 
 /** Replace `{name}` placeholders; unknown placeholders are left as they are. */

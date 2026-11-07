@@ -8,7 +8,7 @@ export const TIME_STEP = 10;
 
 /**
  * Heating zone n. Z2/Z3 follow the Z1 message names of the ebusd ctlv2 config
- * (`Z2Timer_Monday`, `Z2NightTemp`); only Z1 is verified on a real controller.
+ * (`Z2Timer_Monday`, `Z2SetbackTemp`); only Z1 is verified on a real controller.
  */
 const zone = (n: 1 | 2 | 3): ProgramSpec => ({
   id: `z${n}`,
@@ -16,7 +16,7 @@ const zone = (n: 1 | 2 | 3): ProgramSpec => ({
   temp: { min: 5, max: 30, step: 0.5 },
   lowTempWarning: 15,
   defaultTemp: 20,
-  setbackMessage: `Z${n}NightTemp`,
+  setbackMessages: [`Z${n}SetbackTemp`, `Z${n}NightTemp`],
 });
 
 export const PROGRAMS: Record<ProgramId, ProgramSpec> = {
