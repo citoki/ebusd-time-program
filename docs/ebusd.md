@@ -37,7 +37,7 @@ discovery turns its fields into sensors. With the defaults (`mqtt_prefix: ebusd`
 | `sensor.ebusd_ctlv2_z1timer_monday1_…`, `…monday2_…` | slots 1 and 2 |
 | `sensor.ebusd_ctlv2_z1timer_timeslots_slotcount` | number of slots on Monday |
 | `sensor.ebusd_ctlv2_z1timer_timeslots_slotcount_1` … `_6` | number of slots Tuesday … Sunday |
-| `sensor.ebusd_ctlv2_z1setbacktemp` | set-back temperature of zone 1, shown in the info text (optional; older configs: `…_z1nighttemp`) |
+| `sensor.ebusd_ctlv2_z1setbacktemp` | set-back temperature of zone 1, shown in the info text (optional; `number.…` when writes are discovered too; older configs: `…_z1nighttemp`) |
 
 The other programs use the prefixes `z2timer`, `z3timer`, `hwctimer` and `cctimer`. That is about 70 sensors per
 program. The card only re-renders when one of them changes.

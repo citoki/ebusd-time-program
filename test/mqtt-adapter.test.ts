@@ -27,6 +27,9 @@ describe("config", () => {
     expect(setbackEntityId(c, z1, { "sensor.ebusd_ctlv2_z1nighttemp": {} })).toBe("sensor.ebusd_ctlv2_z1nighttemp");
     expect(setbackEntityId(c, z1, { "sensor.ebusd_ctlv2_z1setbacktemp": {}, "sensor.ebusd_ctlv2_z1nighttemp": {} })).toBe("sensor.ebusd_ctlv2_z1setbacktemp");
     expect(setbackEntityId(c, z1, {})).toBe("sensor.ebusd_ctlv2_z1setbacktemp");
+    // writable message with filter-direction ^w: discovery makes it a number entity
+    expect(setbackEntityId(c, z1, { "number.ebusd_ctlv2_z1setbacktemp": {} })).toBe("number.ebusd_ctlv2_z1setbacktemp");
+    expect(setbackEntityId(c, z1, { "number.ebusd_ctlv2_z1setbacktemp": {}, "sensor.ebusd_ctlv2_z1nighttemp": {} })).toBe("number.ebusd_ctlv2_z1setbacktemp");
   });
 
   it("set-back entity per zone; none for HWC and CC", () => {

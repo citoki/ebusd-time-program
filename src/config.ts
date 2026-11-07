@@ -173,13 +173,18 @@ export function accentStyle(cfg: ResolvedConfig): string {
 /**
  * Entity of a zone's set-back temperature ("Absenktemperatur", Z1: register 0x9);
  * null for programs without one. It is a single-value sensor, so the `{field}`
- * part of the template is empty: `sensor.ebusd_ctlv2_z1setbacktemp`. With `states`,
- * the first candidate that exists wins (`…_z1setbacktemp`, then `…_z1nighttemp`);
- * without, or when none exists, the first candidate.
+ * part of the template is empty: `sensor.ebusd_ctlv2_z1setbacktemp`. ebusd's discovery
+ * creates a `number` instead when the message is also writable and `filter-direction`
+ * lets writes through, so each sensor id has a `number.` twin. With `states`, the
+ * first candidate that exists wins (`…_z1setbacktemp`, then `…_z1nighttemp`, each
+ * sensor before number); without, or when none exists, the first candidate.
  */
 export function setbackEntityId(cfg: ResolvedConfig, program: ResolvedProgram, states?: Record<string, unknown>): string | null {
   if (program.setbackEntity) return program.setbackEntity;
-  const ids = (program.spec.setbackMessages ?? []).map((msg) => entityId(cfg, msg, "").replace(/_+$/, ""));
+  const ids = (program.spec.setbackMessages ?? []).flatMap((msg) => {
+    const id = entityId(cfg, msg, "").replace(/_+$/, "");
+    return id.startsWith("sensor.") ? [id, `number.${id.slice("sensor.".length)}`] : [id];
+  });
   return ids.find((id) => states?.[id] !== undefined) ?? ids[0] ?? null;
 }
 
