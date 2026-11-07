@@ -1,4 +1,4 @@
-# ebusd Time Program Card
+# eBUSd Time Program Card
 
 [![Validate](https://github.com/citoki/ebusd-time-program/actions/workflows/validate.yaml/badge.svg)](https://github.com/citoki/ebusd-time-program/actions/workflows/validate.yaml)
 [![Documentation](https://github.com/citoki/ebusd-time-program/actions/workflows/docs.yaml/badge.svg)](https://citoki.github.io/ebusd-time-program/)
@@ -65,7 +65,7 @@ Until the card is listed in the catalog, add it from its link:
 ## Installation (HACS, before 2026.11)
 
 1. **HACS → ⋮ → Custom repositories**, add `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
-2. Search for **ebusd Time Program Card**, **download** it and reload the browser
+2. Search for **eBUSd Time Program Card**, **download** it and reload the browser
 
 ## Installation (manual)
 

@@ -426,7 +426,7 @@ export class EbusdTimeProgramCard extends LitElement {
   protected override render(): TemplateResult | typeof nothing {
     const cfg = this._cfg;
     if (this._inPicker) {
-      return html`<ha-card class="picker-preview"><img src=${previewImage} alt="ebusd Time Program" /></ha-card>`;
+      return html`<ha-card class="picker-preview"><img src=${previewImage} alt="eBUSd Time Program" /></ha-card>`;
     }
     if (!cfg) return nothing;
     const lang = setLanguage(cfg.language ?? this._hass?.locale?.language ?? this._hass?.language);
@@ -699,7 +699,7 @@ window.customCards = window.customCards ?? [];
 if (!window.customCards.some((c) => c.type === CARD_TAG)) {
   window.customCards.push({
     type: CARD_TAG,
-    name: "ebusd Time Program",
+    name: "eBUSd Time Program",
     description: "Weekly time programs of a Vaillant controller via ebusd – edit several days at once.",
     preview: true,
   });

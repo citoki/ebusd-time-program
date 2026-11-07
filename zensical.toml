@@ -1,6 +1,6 @@
 [project]
 site_url = "https://citoki.github.io/ebusd-time-program/"
-site_name = "ebusd Time Program Card"
+site_name = "eBUSd Time Program Card"
 site_description = "Home Assistant dashboard card to edit Vaillant (ebusd ctlv2) weekly time programs for several days at once"
 repo_url = "https://github.com/citoki/ebusd-time-program"
 edit_uri = "edit/main/docs/"

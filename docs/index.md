@@ -52,7 +52,7 @@ Before installing, make sure you have:
     1. Go to **HACS :material-arrow-right: ⋮ :material-arrow-right: Custom repositories**
        ([HACS custom repositories docs](https://hacs.xyz/docs/faq/custom_repositories/))
     2. Add the repository URL `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
-    3. Search for **ebusd Time Program Card** and **download** it
+    3. Search for **eBUSd Time Program Card** and **download** it
     4. Reload the browser
 
 === "Manual"
