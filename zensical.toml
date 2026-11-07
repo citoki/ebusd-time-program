@@ -9,6 +9,7 @@ extra_css = ["stylesheets/extra.css"]
 nav = [
     { "Setup" = [
         "index.md",
+        "ebusd-config.md",
         "ebusd.md",
     ] },
     { "Card" = [

@@ -20,8 +20,9 @@ You need:
   [Home Assistant add-on](https://github.com/LukasGrebe/ha-addons), with MQTT enabled
 - Home Assistant MQTT discovery in ebusd (`--mqttint=/etc/ebusd/mqtt-hassio.cfg`), see the
   [ebusd MQTT wiki](https://github.com/john30/ebusd/wiki/MQTT-integration)
-- the controller's message definitions, e.g. `15.ctlv2.csv` for the VRC 720, which contain the `…Timer_<Day>`
-  messages
+- the controller's message definitions, e.g. `15.ctlv2.csv` for the VRC 720, with **all three slots per day**
+  of the `…Timer_<Day>` messages. The upstream definitions don't have them yet, see
+  [ebusd configuration](ebusd-config.md)
 
 ## What the card reads
 

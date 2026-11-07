@@ -33,8 +33,10 @@ The card needs a working ebusd setup first. Hardware and configuration all come 
   [john30/ebusd-esp32](https://github.com/john30/ebusd-esp32)), connected to the eBUS of your heating system
 - **[ebusd](https://github.com/john30/ebusd)** running and connected to the adapter, see the
   [ebusd wiki](https://github.com/john30/ebusd/wiki) for installation (also available as Home Assistant add-on)
-- the **message definitions** from [john30/ebusd-configuration](https://github.com/john30/ebusd-configuration),
-  which ebusd loads automatically; for the VRC 720 they contain the `…Timer_<Day>` messages the card uses
+- the **message definitions** from [john30/ebusd-configuration](https://github.com/john30/ebusd-configuration)
+  as a **local copy with additions**: upstream reads only the first time slot of each day and hot water without
+  temperature. The card needs all three slots, see
+  [ebusd configuration](https://citoki.github.io/ebusd-time-program/ebusd-config/)
 - **MQTT** in ebusd with Home Assistant discovery (`mqtt-hassio.cfg`), see the
   [MQTT integration wiki](https://github.com/john30/ebusd/wiki/MQTT-integration)
 - Home Assistant with the [MQTT integration](https://www.home-assistant.io/integrations/mqtt/) configured

@@ -25,13 +25,14 @@ checks each day against what the controller reports back.
 
 Before installing, make sure you have:
 
-- **ebusd** connected to your eBUS adapter and publishing to MQTT with Home Assistant discovery, see
-  [ebusd & entities](ebusd.md)
+- **ebusd** connected to your eBUS adapter and publishing to MQTT with Home Assistant discovery
+- **local ebusd definitions** with the complete time program messages; the upstream ones read only the first
+  slot of each day, see [ebusd configuration](ebusd-config.md)
 - **Home Assistant** with the [MQTT integration](https://www.home-assistant.io/integrations/mqtt/) configured;
   the card writes with the `mqtt.publish` action
 - the time program sensors of your controller in Home Assistant, e.g. `sensor.ebusd_ctlv2_z1timer_monday0_htm`
 
-[ebusd & entities](ebusd.md){ .md-button }
+[ebusd configuration](ebusd-config.md){ .md-button }
 
 === "Marketplace (2026.11+)"
 
