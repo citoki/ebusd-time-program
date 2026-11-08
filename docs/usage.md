@@ -89,6 +89,21 @@ If all slots of a program have the same temperature it is shown once in the head
 otherwise slots of 90 minutes or more show their temperature inside the bar. Change this with
 [`temp_labels`](options.md).
 
+For a small glance card, show only today, or today and tomorrow, and leave out the written slots:
+
+```yaml
+type: custom:ebusd-time-program-card
+mode: preview
+stacked: true
+preview_days: today_tomorrow   # or: today
+preview_label: false           # only the bars; hover a bar for its times
+```
+
+![Preview mode with today and tomorrow, without the label line](assets/preview-today.webp){ .shot }
+
+The rows move on at midnight. Without the label line, the times are only visible by hovering, so keep
+`preview_label: true` on dashboards used on phones.
+
 ## Layout and look
 
 On wide dashboards (card width from 720 px) the card uses two columns, on phones one. Force either with

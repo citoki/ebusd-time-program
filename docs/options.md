@@ -31,6 +31,8 @@ type: custom:ebusd-time-program-card
 |---|---|---|
 | `stacked` | Show all programs below each other instead of tabs | `false` |
 | `temp_labels` | Temperature inside the bars. `auto`: only when a program uses more than one temperature, otherwise it is shown once in the heading; `always`; `never` | `auto` |
+| `preview_days` | Rows of the chart: `week`, `today`, or `today_tomorrow` (Sunday continues with Monday) | `week` |
+| `preview_label` | Write the slots of today (or the tapped day) below the chart. With `false` only the bars are shown; hovering a bar shows its times | `true` |
 
 ## Writing
 

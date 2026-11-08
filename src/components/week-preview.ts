@@ -9,6 +9,8 @@ const LABEL_MIN_MINUTES = 90;
 export interface WeekPreviewProps {
   spec: ProgramSpec;
   days: Record<Day, Slot[] | null>;
+  /** Rows to draw, in this order; default the whole week. */
+  rows?: readonly Day[];
   /** Days drawn with the accent outline (edit: the selection, preview: the detail day). */
   selected: readonly Day[];
   /** Days shown with the unsaved draft instead of the controller values. */
@@ -24,6 +26,8 @@ export interface WeekPreviewProps {
   detailTemps?: boolean;
   /** Read-only mode: the slots of this day are written out below the chart. */
   detail?: Day | null;
+  /** Write the detail line (default true); the bars keep their hover tooltips without it. */
+  showDetail?: boolean;
   /** Hover / focus on a day (null when leaving the chart). */
   onHover?: (day: Day | null) => void;
   /** Shown instead of the detail line, e.g. when ebusd is offline. */
@@ -37,7 +41,7 @@ export function renderWeekPreview(p: WeekPreviewProps): TemplateResult {
   return html`<div class="section">
     <p class="label">${p.heading ?? UI.preview}</p>
     <div class="week ${p.labels ? "labelled" : ""}" @mouseleave=${hover ? () => hover(null) : nothing}>
-      ${DAYS.map((d) => {
+      ${(p.rows ?? DAYS).map((d) => {
         const slots = days[d];
         const isSel = selected.includes(d);
         const isPending = pending.includes(d);
@@ -67,7 +71,7 @@ export function renderWeekPreview(p: WeekPreviewProps): TemplateResult {
     </div>
     ${p.alert
       ? html`<p class="detail error" role="alert">${p.alert}</p>`
-      : p.detail
+      : p.detail && p.showDetail !== false
         ? html`<p class="detail" aria-live="polite">
             <span class="detail-day">${UI.dayShort[p.detail]}</span>
             ${detailText(days[p.detail], spec, p.detailTemps ?? true)}
@@ -106,10 +110,10 @@ function describe(day: Day, slots: Slot[] | null, spec: ProgramSpec): string {
     .join(", ")}`;
 }
 
-/** The one temperature all known slots share, or null (none, or several). */
-export function uniformTemp(days: Record<Day, Slot[] | null>, spec: ProgramSpec): number | null {
+/** The one temperature all known slots of `rows` share, or null (none, or several). */
+export function uniformTemp(days: Record<Day, Slot[] | null>, spec: ProgramSpec, rows: readonly Day[] = DAYS): number | null {
   if (!spec.temp) return null;
   const temps = new Set<number>();
-  for (const d of DAYS) for (const s of days[d] ?? []) if (s.temp !== undefined) temps.add(s.temp);
+  for (const d of rows) for (const s of days[d] ?? []) if (s.temp !== undefined) temps.add(s.temp);
   return temps.size === 1 ? [...temps][0]! : null;
 }

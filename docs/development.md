@@ -27,6 +27,7 @@ More settings are URL parameters, listed at the top of `dev/main.ts`:
 |---|---|
 | `tab=1` `days=saturday,sunday` | open a tab, select days |
 | `mode=preview` `stacked=1` `labels=always` | preview mode |
+| `range=today` `range=today_tomorrow` `nolabel=1` | preview rows, hide the detail line |
 | `layout=wide` | force a layout |
 | `programs=z1,z2,hwc` | programs (the simulated system has no Z2/Z3) |
 | `delay=300` | milliseconds per simulated bus operation |

@@ -19,6 +19,7 @@ import {
   draftForSelection,
   orderDays,
   planWrite,
+  previewRows,
   slotDeltas,
   PRESETS,
   toggleDay,
@@ -181,7 +182,8 @@ export class EbusdTimeProgramCard extends LitElement {
 
   getCardSize(): number {
     if (this._cfg?.mode !== "preview") return 10;
-    return this._cfg.stacked ? 1 + 4 * this._cfg.programs.length : 5;
+    const perProgram = this._cfg.previewDays === "week" ? 4 : 2;
+    return 1 + perProgram * (this._cfg.stacked ? this._cfg.programs.length : 1);
   }
 
   getGridOptions() {
@@ -490,11 +492,14 @@ export class EbusdTimeProgramCard extends LitElement {
       </div>`;
     }
     const days = read?.days ?? (Object.fromEntries(DAYS.map((d) => [d, null])) as ProgramRead["days"]);
-    const uniform = uniformTemp(days, spec);
-    const day = this._hover ?? this._detail;
+    const rows = previewRows(cfg.previewDays, dayOf(this._now));
+    const uniform = uniformTemp(days, spec, rows);
+    // today when the clicked day is not on screen (e.g. after midnight in `today` mode)
+    const day = [this._hover, this._detail].find((d): d is Day => d !== null && rows.includes(d)) ?? rows[0]!;
     return renderWeekPreview({
       spec,
       days,
+      rows,
       selected: [day],
       onDay: (d) => (this._detail = d),
       onHover: (d) => (this._hover = d),
@@ -503,6 +508,7 @@ export class EbusdTimeProgramCard extends LitElement {
       detailTemps: uniform === null,
       now: this._nowMarker(),
       detail: day,
+      showDetail: cfg.previewLabel,
       alert: read?.status === "offline" ? UI.status.offline : undefined,
     });
   }

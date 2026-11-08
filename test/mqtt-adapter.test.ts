@@ -69,6 +69,19 @@ describe("config", () => {
     expect(() => resolveConfig({ type: "x", temp_labels: "yes" as never })).toThrow('Unknown temp_labels "yes"');
   });
 
+  it("preview_days and preview_label: week and true by default, validated", () => {
+    expect([cfg.previewDays, cfg.previewLabel]).toEqual(["week", true]);
+    const c = resolveConfig({ type: "x", mode: "preview", preview_days: "today_tomorrow", preview_label: false });
+    expect([c.previewDays, c.previewLabel]).toEqual(["today_tomorrow", false]);
+    expect(() => resolveConfig({ type: "x", preview_days: "tomorrow" as never })).toThrow('Unknown preview_days "tomorrow"');
+  });
+
+  it("uniformTemp over the shown rows only", () => {
+    const week = readProgram(live(), cfg, z1).days;
+    expect(uniformTemp(week, z1, ["monday", "tuesday"])).toBe(21); // workdays only: 21.0
+    expect(uniformTemp(week, z1, ["friday", "saturday"])).toBeNull(); // 21.0 and 21.5
+  });
+
   it("uniformTemp: one shared temperature, else null", () => {
     const week = readProgram(live(), cfg, z1).days;
     expect(uniformTemp(week, z1)).toBeNull(); // 21.0 on workdays, 21.5 on the weekend

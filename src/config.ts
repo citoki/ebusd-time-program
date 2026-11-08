@@ -1,5 +1,6 @@
 import { PROGRAMS } from "./model/programs.js";
 import type { ProgramId, ProgramSpec } from "./model/types.js";
+import { PREVIEW_DAYS, type PreviewDays } from "./model/week.js";
 
 export type DefaultDays = "all" | "weekdays" | "weekend" | "today";
 export type CardTheme = "brand" | "default";
@@ -52,6 +53,10 @@ export interface CardConfig {
    * program has more than one temperature (otherwise it is shown in the heading).
    */
   temp_labels?: TempLabels;
+  /** Preview mode: `week` (default), `today`, or `today_tomorrow`. */
+  preview_days?: PreviewDays;
+  /** Preview mode: the slots of the shown day written out below the chart (default true). */
+  preview_label?: boolean;
   /** Override the accent colour with any CSS colour, e.g. `"#e07a1f"`. */
   accent?: string;
   /** Z1 set-back temperature entity (default: the Z1SetbackTemp or Z1NightTemp sensor); other zones set it per program. */
@@ -86,6 +91,8 @@ export interface ResolvedConfig {
   mode: CardMode;
   stacked: boolean;
   tempLabels: TempLabels;
+  previewDays: PreviewDays;
+  previewLabel: boolean;
   /** Custom accent colour; null = the theme's. */
   accent: string | null;
   verifyTimeout: number;
@@ -131,6 +138,10 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   if (!TEMP_LABELS.includes(tempLabels)) {
     throw new ConfigError(`Unknown temp_labels "${String(tempLabels)}" (supported: ${TEMP_LABELS.join(", ")})`);
   }
+  const previewDays = config.preview_days ?? "week";
+  if (!PREVIEW_DAYS.includes(previewDays)) {
+    throw new ConfigError(`Unknown preview_days "${String(previewDays)}" (supported: ${PREVIEW_DAYS.join(", ")})`);
+  }
   const seen = new Set<ProgramId>();
   const programs = entries.map((entry): ResolvedProgram => {
     const p: ProgramConfig = typeof entry === "string" ? { id: entry } : entry;
@@ -160,6 +171,8 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     mode,
     stacked: config.stacked ?? false,
     tempLabels,
+    previewDays,
+    previewLabel: config.preview_label ?? true,
     accent: config.accent?.trim() || null,
     verifyTimeout: config.verify_timeout ?? 30,
   };

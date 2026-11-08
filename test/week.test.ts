@@ -5,11 +5,13 @@ import {
   applyDraft,
   draftForSelection,
   emptyWeek,
+  nextDay,
   normalizeSlots,
   orderDays,
   planWrite,
   PRESETS,
   presetOf,
+  previewRows,
   sameSlots,
   slotDeltas,
   toggleDay,
@@ -158,5 +160,19 @@ describe("slotDeltas", () => {
     const w = emptyWeek();
     w.monday = two;
     expect(slotDeltas(w, planWrite(w, ["monday"], [], z1))).toEqual([{ delta: -2, days: ["monday"] }]);
+  });
+});
+
+describe("preview rows", () => {
+  it("whole week by default", () => {
+    expect(previewRows("week", "friday")).toEqual(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]);
+  });
+  it("today only", () => {
+    expect(previewRows("today", "wednesday")).toEqual(["wednesday"]);
+  });
+  it("today and tomorrow; Sunday wraps to Monday", () => {
+    expect(previewRows("today_tomorrow", "friday")).toEqual(["friday", "saturday"]);
+    expect(previewRows("today_tomorrow", "sunday")).toEqual(["sunday", "monday"]);
+    expect(nextDay("sunday")).toBe("monday");
   });
 });

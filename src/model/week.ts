@@ -11,6 +11,23 @@ export const PRESETS: Record<Preset, readonly Day[]> = {
   weekend: ["saturday", "sunday"],
 };
 
+// ---------- preview rows ----------
+
+export type PreviewDays = "week" | "today" | "today_tomorrow";
+export const PREVIEW_DAYS: readonly PreviewDays[] = ["week", "today", "today_tomorrow"];
+
+/** Day after `day`; Sunday wraps to Monday (the program repeats every week). */
+export function nextDay(day: Day): Day {
+  return DAYS[(DAYS.indexOf(day) + 1) % DAYS.length]!;
+}
+
+/** Rows of the preview chart: the whole week, or today (and tomorrow) only. */
+export function previewRows(range: PreviewDays, today: Day): readonly Day[] {
+  if (range === "today") return [today];
+  if (range === "today_tomorrow") return [today, nextDay(today)];
+  return DAYS;
+}
+
 /** Selection in Monday-first order without duplicates. */
 export function orderDays(days: Iterable<Day>): Day[] {
   const set = new Set(days);

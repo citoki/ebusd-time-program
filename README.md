@@ -94,6 +94,8 @@ That is enough for a standard ebusd setup with zone 1, hot water and circulation
 | `mode` | `edit` | `edit`, or `preview` for a read-only week chart |
 | `stacked` | `false` | Preview mode: all programs below each other instead of tabs |
 | `temp_labels` | `auto` | Preview mode: temperatures inside the bars, `auto` / `always` / `never` |
+| `preview_days` | `week` | Preview mode: `week`, `today` or `today_tomorrow` |
+| `preview_label` | `true` | Preview mode: the day's slots written out below the chart |
 | `default_days` | `weekdays` | Days selected on open: `weekdays`, `weekend`, `all`, `today` |
 | `show_preview` | `true` | Week preview below the editor |
 | `layout` | `auto` | Two columns from 720 px card width; `wide` / `narrow` force one |

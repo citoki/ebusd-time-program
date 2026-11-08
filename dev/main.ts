@@ -17,6 +17,7 @@ import { applyHaTheme, mountSettingsBar } from "./settings-bar.js";
 //   lang=de|fr|en-GB|…   card language (default: hass.language = en)
 //   mode=preview  stacked=1   read-only preview card (stacked: all programs, no tabs)
 //   labels=always|never  temperatures inside the bars (preview mode, default auto)
+//   range=today|today_tomorrow  preview rows (default week)   nolabel=1  hide the detail line
 //   layout=wide|narrow   force a layout (default auto)
 //   theme=default        HA theme instead of the brand look; ha=light fakes a light HA theme
 //   (lang, theme and ha can also be switched with the selectors at the top of the page)
@@ -36,6 +37,9 @@ if (mode) config.mode = mode as NonNullable<CardConfig["mode"]>;
 if (params.get("stacked")) config.stacked = true;
 const labels = params.get("labels");
 if (labels) config.temp_labels = labels as NonNullable<CardConfig["temp_labels"]>;
+const range = params.get("range");
+if (range) config.preview_days = range as NonNullable<CardConfig["preview_days"]>;
+if (params.get("nolabel")) config.preview_label = false;
 const layout = params.get("layout");
 if (layout) config.layout = layout as NonNullable<CardConfig["layout"]>;
 applyHaTheme(params.get("ha"));
