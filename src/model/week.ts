@@ -148,15 +148,3 @@ export function slotDeltas(week: Week, plan: WritePlan): SlotDelta[] {
   }
   return [...groups].sort((a, b) => b[0] - a[0]).map(([delta, days]) => ({ delta, days }));
 }
-
-/** Week after applying a draft to some days (used for preview and verification). */
-export function applyDraft(week: Week, days: readonly Day[], draft: readonly Slot[], spec: ProgramSpec): Week {
-  const next = { ...week };
-  const slots = normalizeSlots(draft, spec);
-  for (const d of days) next[d] = slots.map((s) => ({ ...s }));
-  return next;
-}
-
-export function emptyWeek(): Week {
-  return Object.fromEntries(DAYS.map((d) => [d, []])) as unknown as Week;
-}

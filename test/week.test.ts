@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PROGRAMS } from "../src/model/programs.js";
-import type { Slot, Week } from "../src/model/types.js";
+import { DAYS, type Slot, type Week } from "../src/model/types.js";
 import {
-  applyDraft,
   draftForSelection,
-  emptyWeek,
   nextDay,
   normalizeSlots,
   orderDays,
@@ -16,6 +14,8 @@ import {
   slotDeltas,
   toggleDay,
 } from "../src/model/week.js";
+
+const emptyWeek = (): Week => Object.fromEntries(DAYS.map((d) => [d, []])) as unknown as Week;
 
 const { z1, cc } = PROGRAMS;
 
@@ -122,13 +122,6 @@ describe("planWrite", () => {
     expect(plan.write).toEqual(PRESETS.weekdays);
     expect(plan.unchanged).toEqual([]);
     expect(plan.slots).toEqual(draft);
-  });
-  it("applyDraft updates only the given days", () => {
-    const draft = [{ start: "07:00", end: "22:00", temp: 21 }];
-    const next = applyDraft(liveWeek(), ["saturday"], draft, z1);
-    expect(next.saturday).toEqual(draft);
-    expect(next.sunday).toEqual(weekendDay);
-    expect(next.monday).toEqual(workday);
   });
 });
 
