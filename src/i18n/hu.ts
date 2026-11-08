@@ -56,8 +56,8 @@ export const hu: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Ezeken az idősávokon kívül a zóna csak a csökkentett hőmérsékletre fűt (a szabályozón beállítva)."
-        : `Ezeken az idősávokon kívül a zóna csak a(z) ${formatTemp(setback)} °C csökkentett hőmérsékletre fűt (a szabályozón beállítva).`,
+        ? "Ezeken az idősávokon kívül a zóna csak a csökkentett hőmérsékletre fűt."
+        : `Ezeken az idősávokon kívül a zóna csak a(z) ${formatTemp(setback)} °C csökkentett hőmérsékletre fűt.`,
     hwc: () => "Ezeken az idősávokon kívül a melegvíz nem melegszik újra.",
     cc: () => "Ezeken az idősávokon kívül a cirkulációs szivattyú ki van kapcsolva.",
   },
@@ -90,6 +90,10 @@ export const hu: Strings = {
   tempUp: "Hőmérséklet növelése",
   done: "Kész",
   cancel: "Mégse",
+  setbackTitle: "Csökkentett hőmérséklet",
+  save: "Mentés",
+  saveFailed: (message: string) => `Mentés sikertelen: ${message}`,
+  setbackReadOnly: "A szabályozón állítható.",
   change: "Módosítás:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} változatlan`,

@@ -55,8 +55,8 @@ export const nl: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Buiten deze tijdvakken verwarmt de zone alleen tot de verlaagde temperatuur (ingesteld op de regelaar)."
-        : `Buiten deze tijdvakken verwarmt de zone alleen tot de verlaagde temperatuur van ${formatTemp(setback)} °C (ingesteld op de regelaar).`,
+        ? "Buiten deze tijdvakken verwarmt de zone alleen tot de verlaagde temperatuur."
+        : `Buiten deze tijdvakken verwarmt de zone alleen tot de verlaagde temperatuur van ${formatTemp(setback)} °C.`,
     hwc: () => "Buiten deze tijdvakken wordt het warme water niet bijverwarmd.",
     cc: () => "Buiten deze tijdvakken staat de circulatiepomp uit.",
   },
@@ -89,6 +89,10 @@ export const nl: Strings = {
   tempUp: "Temperatuur verhogen",
   done: "Klaar",
   cancel: "Annuleren",
+  setbackTitle: "Verlaagde temperatuur",
+  save: "Opslaan",
+  saveFailed: (message: string) => `Opslaan mislukt: ${message}`,
+  setbackReadOnly: "In te stellen op de regelaar.",
   change: "Wijzigen:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} ongewijzigd`,

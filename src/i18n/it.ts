@@ -55,8 +55,8 @@ export const it: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Al di fuori di queste fasce la zona riscalda solo alla temperatura ridotta (impostata sulla centralina)."
-        : `Al di fuori di queste fasce la zona riscalda solo alla temperatura ridotta di ${formatTemp(setback)} °C (impostata sulla centralina).`,
+        ? "Al di fuori di queste fasce la zona riscalda solo alla temperatura ridotta."
+        : `Al di fuori di queste fasce la zona riscalda solo alla temperatura ridotta di ${formatTemp(setback)} °C.`,
     hwc: () => "Al di fuori di queste fasce l’acqua calda non viene riscaldata.",
     cc: () => "Al di fuori di queste fasce la pompa di ricircolo è spenta.",
   },
@@ -89,6 +89,10 @@ export const it: Strings = {
   tempUp: "Alza temperatura",
   done: "Fatto",
   cancel: "Annulla",
+  setbackTitle: "Temperatura ridotta",
+  save: "Salva",
+  saveFailed: (message: string) => `Salvataggio non riuscito: ${message}`,
+  setbackReadOnly: "Da impostare sulla centralina.",
   change: "Modifica:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} invariati`,

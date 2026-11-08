@@ -201,6 +201,27 @@ export function setbackEntityId(cfg: ResolvedConfig, program: ResolvedProgram, s
   return ids.find((id) => states?.[id] !== undefined) ?? ids[0] ?? null;
 }
 
+/** How the set-back temperature is written from the card. */
+export type SetbackWrite =
+  | { kind: "service"; domain: "number" | "input_number"; entity: string }
+  | { kind: "mqtt"; topic: string };
+
+/**
+ * Write path for a zone's set-back temperature, or null when the card cannot
+ * change it. A `number`/`input_number` entity is set through its own service (so
+ * a configured `setback_entity` works too); a derived ebusd sensor is written
+ * through the message's MQTT `set` topic, like the time program.
+ */
+export function setbackWrite(cfg: ResolvedConfig, program: ResolvedProgram, states?: Record<string, unknown>): SetbackWrite | null {
+  const id = setbackEntityId(cfg, program, states);
+  if (!id) return null;
+  const domain = id.slice(0, id.indexOf("."));
+  if (domain === "number" || domain === "input_number") return { kind: "service", domain, entity: id };
+  if (program.setbackEntity) return null;
+  const message = (program.spec.setbackMessages ?? []).find((m) => entityId(cfg, m, "").replace(/_+$/, "") === id);
+  return message ? { kind: "mqtt", topic: topic(cfg, message, "set") } : null;
+}
+
 /** Replace `{name}` placeholders; unknown placeholders are left as they are. */
 export function fillTemplate(template: string, values: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (m, key: string) => values[key] ?? m);

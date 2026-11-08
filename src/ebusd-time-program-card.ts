@@ -4,10 +4,10 @@ import { renderApplyBar } from "./components/apply-bar.js";
 import { renderBusyPanel } from "./components/busy-panel.js";
 import { renderDayPicker, selectionLabel } from "./components/day-picker.js";
 import { renderTabs } from "./components/program-tabs.js";
-import { renderSheet, type SheetState } from "./components/sheets.js";
+import { renderInfoSheet, renderSheet, SETBACK_ICON, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
-import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, resolveConfig, setbackEntityId, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
+import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, resolveConfig, setbackEntityId, setbackWrite, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { formatTemp, programName, setLanguage, UI } from "./i18n/index.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
@@ -75,7 +75,10 @@ export class EbusdTimeProgramCard extends LitElement {
     _sheet: { state: true },
     _job: { state: true },
     _notice: { state: true },
-    _infoOpen: { state: true },
+    _infoDialog: { state: true },
+    _setbackDraft: { state: true },
+    _setbackSaving: { state: true },
+    _setbackError: { state: true },
     _setback: { state: true },
     _now: { state: true },
     _detail: { state: true },
@@ -93,7 +96,11 @@ export class EbusdTimeProgramCard extends LitElement {
   declare _job: JobSnapshot | null;
   /** One-off error shown in the apply bar (e.g. no service access). */
   declare _notice: string | null;
-  declare _infoOpen: boolean;
+  declare _infoDialog: boolean;
+  /** Set-back value in the info dialog (null: not known). */
+  declare _setbackDraft: number | null;
+  declare _setbackSaving: boolean;
+  declare _setbackError: string | null;
   /** Set-back temperature per configured program (zones only). */
   declare _setback: (number | null)[];
   /** Current time for the "now" marker, refreshed every minute. */
@@ -124,7 +131,10 @@ export class EbusdTimeProgramCard extends LitElement {
     this._sheet = null;
     this._job = null;
     this._notice = null;
-    this._infoOpen = false;
+    this._infoDialog = false;
+    this._setbackDraft = null;
+    this._setbackSaving = false;
+    this._setbackError = null;
     this._setback = [];
     this._now = new Date();
     this._detail = dayOf(this._now);
@@ -420,7 +430,11 @@ export class EbusdTimeProgramCard extends LitElement {
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
     if (changed.has("_sheet") && this._sheet) {
-      const dialog = this.renderRoot.querySelector<HTMLDialogElement>("dialog.sheet");
+      const dialog = this.renderRoot.querySelector<HTMLDialogElement>("dialog.sheet:not(.info-sheet)");
+      if (dialog && !dialog.open) dialog.showModal();
+    }
+    if (changed.has("_infoDialog") && this._infoDialog) {
+      const dialog = this.renderRoot.querySelector<HTMLDialogElement>("dialog.info-sheet");
       if (dialog && !dialog.open) dialog.showModal();
     }
   }
@@ -558,11 +572,7 @@ export class EbusdTimeProgramCard extends LitElement {
                 onDelete: this._onDelete,
                 onAdd: this._onAdd,
                 info: infoText(spec, this._setback[this._active] ?? null),
-                infoOpen: this._infoOpen,
-                onInfo: () => {
-                  this._dismissSuccess();
-                  this._infoOpen = !this._infoOpen;
-                },
+                onInfo: this._onInfo,
               })
             : html`<div class="section"><p class="empty">${UI.noDaySelected}</p></div>`}
         </div>
@@ -602,7 +612,71 @@ export class EbusdTimeProgramCard extends LitElement {
             </div>`
           : nothing}
       </div>
-      ${this._sheet ? this._renderSheet(ctx, this._sheet) : nothing}`;
+      ${this._sheet ? this._renderSheet(ctx, this._sheet) : nothing}
+      ${this._infoDialog ? this._renderInfo(cfg) : nothing}`;
+  }
+
+  // ---------- info dialog (set-back temperature) ----------
+
+  private _onInfo = () => {
+    this._dismissSuccess();
+    this._setbackDraft = this._setback[this._active] ?? null;
+    this._setbackError = null;
+    this._infoDialog = true;
+  };
+
+  private _onInfoClosed = () => {
+    this._infoDialog = false;
+  };
+
+  private _onSetbackSave = async () => {
+    const cfg = this._cfg;
+    const hass = this._hass;
+    const value = this._setbackDraft;
+    if (!cfg || !hass?.callService || value === null) return;
+    const target = setbackWrite(cfg, cfg.programs[this._active]!, hass.states);
+    if (!target) return;
+    this._setbackSaving = true;
+    this._setbackError = null;
+    try {
+      if (target.kind === "service") await hass.callService(target.domain, "set_value", { entity_id: target.entity, value });
+      else await hass.callService("mqtt", "publish", { topic: target.topic, payload: String(value) });
+      // the entity follows once ebusd has written and read back the value
+      this.renderRoot.querySelector<HTMLDialogElement>("dialog.info-sheet")?.close();
+    } catch (e) {
+      this._setbackError = UI.saveFailed(e instanceof Error ? e.message : String(e));
+    } finally {
+      this._setbackSaving = false;
+    }
+  };
+
+  private _renderInfo(cfg: ResolvedConfig): TemplateResult {
+    const program = cfg.programs[this._active]!;
+    const { spec } = program;
+    const onClosed = this._onInfoClosed;
+    if (!spec.setbackMessages || !spec.temp) return renderInfoSheet({ title: UI.info, text: infoText(spec, null), onClosed });
+    const current = this._setback[this._active] ?? null;
+    const writable = !!this._hass?.callService && setbackWrite(cfg, program, this._hass.states) !== null;
+    const entity = this._hass?.states[setbackEntityId(cfg, program, this._hass.states) ?? ""];
+    const ownIcon = entity?.attributes.icon;
+    return renderInfoSheet({
+      title: `${UI.setbackTitle} · ${programName(program)}`,
+      // the entity's own icon if it has one, else the night icon
+      icon: typeof ownIcon === "string" && ownIcon ? ownIcon : SETBACK_ICON,
+      text: infoText(spec, null),
+      setback: {
+        spec,
+        range: spec.temp,
+        value: this._setbackDraft,
+        writable,
+        dirty: this._setbackDraft !== current,
+        saving: this._setbackSaving,
+        error: this._setbackError,
+        onChange: (v) => (this._setbackDraft = v),
+        onSave: this._onSetbackSave,
+      },
+      onClosed,
+    });
   }
 
   private _renderSheet(ctx: EditorContext, sheet: SheetState): TemplateResult {

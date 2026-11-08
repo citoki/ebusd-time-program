@@ -79,6 +79,16 @@ export class FakeEbusd {
   }
 
   private onSet(message: string, payload: string): void {
+    if (Object.values(PROGRAMS).some((spec) => spec.setbackMessages?.includes(message))) {
+      // single value (set-back temperature): ebusd writes it and publishes the new value
+      const id = entityId(this.cfg, message, "").replace(/_+$/, "");
+      const old = this.states[id];
+      if (old) {
+        this.states = { ...this.states, [id]: { ...old, state: Number(payload).toFixed(1) } };
+        this.onUpdate(this.hass());
+      }
+      return;
+    }
     const found = findDay(message);
     if (!found) return;
     const [spec, day] = found;

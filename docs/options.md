@@ -39,7 +39,7 @@ type: custom:ebusd-time-program-card
 | Option | Description | Default |
 |---|---|---|
 | `verify_timeout` | Seconds to wait per day for the controller to confirm a write | `30` |
-| `setback_entity` | Entity with the set-back temperature of zone 1, shown in the info text. Other zones: per program | `sensor.` or `number.{prefix}_{circuit}_z1setbacktemp`, else `…_z1nighttemp` |
+| `setback_entity` | Entity with the set-back temperature of zone 1, shown and changed in the ⓘ dialog (a `number` or `input_number` can be changed, a custom `sensor` is only shown). Other zones: per program | `sensor.` or `number.{prefix}_{circuit}_z1setbacktemp`, else `…_z1nighttemp` |
 
 ## ebusd
 

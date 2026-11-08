@@ -55,8 +55,8 @@ export const da: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Uden for disse perioder varmer zonen kun op til sin sænkede temperatur (indstillet på regulatoren)."
-        : `Uden for disse perioder varmer zonen kun op til sin sænkede temperatur på ${formatTemp(setback)} °C (indstillet på regulatoren).`,
+        ? "Uden for disse perioder varmer zonen kun op til sin sænkede temperatur."
+        : `Uden for disse perioder varmer zonen kun op til sin sænkede temperatur på ${formatTemp(setback)} °C.`,
     hwc: () => "Uden for disse perioder opvarmes det varme vand ikke.",
     cc: () => "Uden for disse perioder er cirkulationspumpen slukket.",
   },
@@ -89,6 +89,10 @@ export const da: Strings = {
   tempUp: "Hæv temperaturen",
   done: "Færdig",
   cancel: "Annuller",
+  setbackTitle: "Sænket temperatur",
+  save: "Gem",
+  saveFailed: (message: string) => `Kunne ikke gemme: ${message}`,
+  setbackReadOnly: "Indstilles på regulatoren.",
   change: "Ændring:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} uændret`,

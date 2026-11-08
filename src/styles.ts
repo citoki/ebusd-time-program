@@ -413,24 +413,16 @@ export const cardStyles = css`
   .info-btn {
     margin-left: auto;
   }
-  .info-btn:hover,
-  .info-btn.active {
+  .info-btn:hover {
     color: var(--etp-accent);
   }
-  .info-box {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border-left: 3px solid var(--etp-accent);
-    background: var(--etp-surface-2);
+  .info-text {
+    margin: 0 0 12px;
     font-size: 0.9rem;
     line-height: 1.4;
   }
-  .info-icon {
-    color: var(--etp-accent);
-    flex: none;
+  .temp-big.readonly {
+    justify-content: center;
   }
   .issue {
     margin: 2px 0 4px;
@@ -635,6 +627,16 @@ export const cardStyles = css`
     margin: 0 0 12px;
     font-size: 1rem;
     font-weight: 500;
+  }
+  .info-sheet .sheet-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .title-icon {
+    flex: none;
+    color: var(--etp-accent);
+    --mdc-icon-size: 20px;
   }
   .spinners {
     display: flex;

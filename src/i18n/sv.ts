@@ -55,8 +55,8 @@ export const sv: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Utanför dessa perioder värmer zonen bara till sin sänkta temperatur (inställd på regulatorn)."
-        : `Utanför dessa perioder värmer zonen bara till sin sänkta temperatur på ${formatTemp(setback)} °C (inställd på regulatorn).`,
+        ? "Utanför dessa perioder värmer zonen bara till sin sänkta temperatur."
+        : `Utanför dessa perioder värmer zonen bara till sin sänkta temperatur på ${formatTemp(setback)} °C.`,
     hwc: () => "Utanför dessa perioder värms varmvattnet inte upp.",
     cc: () => "Utanför dessa perioder är cirkulationspumpen avstängd.",
   },
@@ -89,6 +89,10 @@ export const sv: Strings = {
   tempUp: "Höj temperaturen",
   done: "Klar",
   cancel: "Avbryt",
+  setbackTitle: "Sänkt temperatur",
+  save: "Spara",
+  saveFailed: (message: string) => `Kunde inte spara: ${message}`,
+  setbackReadOnly: "Ställs in på regulatorn.",
   change: "Ändra:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} oförändrade`,

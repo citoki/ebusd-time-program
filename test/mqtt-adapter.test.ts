@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectCountMessage, programFingerprint, readProgram } from "../src/adapters/mqtt.js";
-import { accentStyle, ConfigError, entityId, resolveConfig, setbackEntityId, topic } from "../src/config.js";
+import { accentStyle, ConfigError, entityId, resolveConfig, setbackEntityId, setbackWrite, topic } from "../src/config.js";
 import type { Hass } from "../src/hass.js";
 import { uniformTemp } from "../src/components/week-preview.js";
 import { programName } from "../src/i18n/index.js";
@@ -30,6 +30,19 @@ describe("config", () => {
     // writable message with filter-direction ^w: discovery makes it a number entity
     expect(setbackEntityId(c, z1, { "number.ebusd_ctlv2_z1setbacktemp": {} })).toBe("number.ebusd_ctlv2_z1setbacktemp");
     expect(setbackEntityId(c, z1, { "number.ebusd_ctlv2_z1setbacktemp": {}, "sensor.ebusd_ctlv2_z1nighttemp": {} })).toBe("number.ebusd_ctlv2_z1setbacktemp");
+  });
+
+  it("set-back write: number service, else the MQTT set topic of the message; none for custom sensors", () => {
+    const c = resolveConfig({ type: "x" });
+    const z1 = c.programs[0]!;
+    expect(setbackWrite(c, z1, { "number.ebusd_ctlv2_z1setbacktemp": {} })).toEqual({ kind: "service", domain: "number", entity: "number.ebusd_ctlv2_z1setbacktemp" });
+    expect(setbackWrite(c, z1, { "sensor.ebusd_ctlv2_z1setbacktemp": {} })).toEqual({ kind: "mqtt", topic: "ebusd/ctlv2/Z1SetbackTemp/set" });
+    expect(setbackWrite(c, z1, { "sensor.ebusd_ctlv2_z1nighttemp": {} })).toEqual({ kind: "mqtt", topic: "ebusd/ctlv2/Z1NightTemp/set" });
+    const custom = resolveConfig({ type: "x", setback_entity: "sensor.my_setback" });
+    expect(setbackWrite(custom, custom.programs[0]!, {})).toBeNull();
+    const helper = resolveConfig({ type: "x", setback_entity: "input_number.setback" });
+    expect(setbackWrite(helper, helper.programs[0]!, {})).toEqual({ kind: "service", domain: "input_number", entity: "input_number.setback" });
+    expect(setbackWrite(c, c.programs[1]!, {})).toBeNull(); // HWC
   });
 
   it("set-back entity per zone; none for HWC and CC", () => {

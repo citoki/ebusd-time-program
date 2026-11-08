@@ -55,8 +55,8 @@ export const fr: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "En dehors de ces plages, la zone ne chauffe qu’à sa température réduite (réglée sur le régulateur)."
-        : `En dehors de ces plages, la zone ne chauffe qu’à sa température réduite de ${formatTemp(setback)} °C (réglée sur le régulateur).`,
+        ? "En dehors de ces plages, la zone ne chauffe qu’à sa température réduite."
+        : `En dehors de ces plages, la zone ne chauffe qu’à sa température réduite de ${formatTemp(setback)} °C.`,
     hwc: () => "En dehors de ces plages, l’eau chaude n’est pas réchauffée.",
     cc: () => "En dehors de ces plages, la pompe de circulation est arrêtée.",
   },
@@ -89,6 +89,10 @@ export const fr: Strings = {
   tempUp: "Augmenter la température",
   done: "Terminé",
   cancel: "Annuler",
+  setbackTitle: "Température réduite",
+  save: "Enregistrer",
+  saveFailed: (message: string) => `Échec de l’enregistrement : ${message}`,
+  setbackReadOnly: "À régler sur le régulateur.",
   change: "Modifier :",
   dayCount: days,
   unchangedDays: (d: string) => `${d} inchangé(s)`,

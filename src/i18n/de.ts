@@ -54,8 +54,8 @@ export const de: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Außerhalb dieser Zeitfenster heizt die Zone nur auf ihre Absenktemperatur (am Regler eingestellt)."
-        : `Außerhalb dieser Zeitfenster heizt die Zone nur auf ihre Absenktemperatur von ${formatTemp(setback)} °C (am Regler eingestellt).`,
+        ? "Außerhalb dieser Zeitfenster heizt die Zone nur auf ihre Absenktemperatur."
+        : `Außerhalb dieser Zeitfenster heizt die Zone nur auf ihre Absenktemperatur von ${formatTemp(setback)} °C.`,
     hwc: () => "Außerhalb dieser Zeitfenster wird kein Warmwasser nachgeheizt.",
     cc: () => "Außerhalb dieser Zeitfenster ist die Zirkulationspumpe aus.",
   },
@@ -88,6 +88,10 @@ export const de: Strings = {
   tempUp: "Temperatur erhöhen",
   done: "Fertig",
   cancel: "Abbrechen",
+  setbackTitle: "Absenktemperatur",
+  save: "Speichern",
+  saveFailed: (message: string) => `Speichern fehlgeschlagen: ${message}`,
+  setbackReadOnly: "Am Regler einstellen.",
   change: "Ändern:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} unverändert`,

@@ -63,8 +63,8 @@ export const pl: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Poza tymi przedziałami strefa grzeje tylko do temperatury obniżonej (ustawionej w regulatorze)."
-        : `Poza tymi przedziałami strefa grzeje tylko do temperatury obniżonej ${formatTemp(setback)} °C (ustawionej w regulatorze).`,
+        ? "Poza tymi przedziałami strefa grzeje tylko do temperatury obniżonej."
+        : `Poza tymi przedziałami strefa grzeje tylko do temperatury obniżonej ${formatTemp(setback)} °C.`,
     hwc: () => "Poza tymi przedziałami ciepła woda nie jest podgrzewana.",
     cc: () => "Poza tymi przedziałami pompa cyrkulacyjna jest wyłączona.",
   },
@@ -97,6 +97,10 @@ export const pl: Strings = {
   tempUp: "Podnieś temperaturę",
   done: "Gotowe",
   cancel: "Anuluj",
+  setbackTitle: "Temperatura obniżona",
+  save: "Zapisz",
+  saveFailed: (message: string) => `Nie udało się zapisać: ${message}`,
+  setbackReadOnly: "Ustaw w regulatorze.",
   change: "Zmiana:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} bez zmian`,

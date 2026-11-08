@@ -60,8 +60,8 @@ export const en = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "Outside these slots the zone only heats to its set-back temperature (set on the controller)."
-        : `Outside these slots the zone only heats to its set-back temperature of ${formatTemp(setback)} °C (set on the controller).`,
+        ? "Outside these slots the zone only heats to its set-back temperature."
+        : `Outside these slots the zone only heats to its set-back temperature of ${formatTemp(setback)} °C.`,
     hwc: () => "Outside these slots hot water is not reheated.",
     cc: () => "Outside these slots the circulation pump is off.",
   },
@@ -96,6 +96,10 @@ export const en = {
   tempUp: "Raise temperature",
   done: "Done",
   cancel: "Cancel",
+  setbackTitle: "Set-back temperature",
+  save: "Save",
+  saveFailed: (message: string) => `Could not save: ${message}`,
+  setbackReadOnly: "Change it on the controller.",
   // apply bar
   change: "Change:",
   dayCount: (n: number) => (n === 1 ? "1 day" : `${n} days`),

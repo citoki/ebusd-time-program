@@ -24,9 +24,9 @@ export interface SlotListProps {
   onEdit: (index: number, field: SlotField) => void;
   onDelete: (index: number) => void;
   onAdd: () => void;
-  /** Explanation of what happens outside the slots (info button). */
+  /** Tooltip of the info button: what happens outside the slots. */
   info: string;
-  infoOpen: boolean;
+  /** Opens the info dialog (zones: with the set-back temperature). */
   onInfo: () => void;
 }
 
@@ -67,12 +67,6 @@ export function renderSlotList(p: SlotListProps): TemplateResult {
       ${dayIssues.map((i) => html`<p class="issue ${i.level}">${issueMessage(i)}</p>`)}
     </div>
     ${slots === null ? nothing : renderAdd(p, slots.length)}
-    ${p.infoOpen
-      ? html`<div class="info-box" id="slot-info" role="note">
-          <span class="info-icon" aria-hidden="true">${icon(ICON_INFO)}</span>
-          <span>${p.info}</span>
-        </div>`
-      : nothing}
   </div>`;
 }
 
@@ -132,10 +126,9 @@ function renderAdd(p: SlotListProps, count: number): TemplateResult {
     <button class="add" ?disabled=${p.addBlocked !== null} @click=${p.onAdd}>${icon(ICON_ADD)} ${UI.addSlot}</button>
     <span class="add-note">${p.addBlocked ?? UI.slotsLeft(left)}</span>
     <button
-      class="icon-btn info-btn ${p.infoOpen ? "active" : ""}"
+      class="icon-btn info-btn"
       aria-label=${UI.info}
-      aria-expanded=${p.infoOpen ? "true" : "false"}
-      aria-controls="slot-info"
+      aria-haspopup="dialog"
       title=${p.info}
       @click=${p.onInfo}
     >

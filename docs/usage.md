@@ -23,7 +23,8 @@ Each day has up to **3 slots**. Times are on the controller's 10-minute grid, `2
 - **Add time slot** adds a one-hour slot an hour after the last one (or in the first free gap), with the
   temperature of the last slot. The number in brackets is how many slots are left.
 - The bin deletes a slot.
-- **ⓘ** explains what happens outside the slots, e.g. that a zone only heats to its set-back temperature then.
+- **ⓘ** explains what happens outside the slots. For a zone it opens a dialog where you can change the
+  set-back temperature it heats to outside the slots; **Save** writes it to the controller right away.
 
 | Program | Temperature per slot | Outside the slots |
 |---|---|---|

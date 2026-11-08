@@ -56,8 +56,8 @@ export const ro: Strings = {
   hint: {
     zone: (setback: number | null) =>
       setback === null
-        ? "În afara acestor intervale, zona încălzește doar la temperatura redusă (setată pe regulator)."
-        : `În afara acestor intervale, zona încălzește doar la temperatura redusă de ${formatTemp(setback)} °C (setată pe regulator).`,
+        ? "În afara acestor intervale, zona încălzește doar la temperatura redusă."
+        : `În afara acestor intervale, zona încălzește doar la temperatura redusă de ${formatTemp(setback)} °C.`,
     hwc: () => "În afara acestor intervale apa caldă nu este reîncălzită.",
     cc: () => "În afara acestor intervale pompa de recirculare este oprită.",
   },
@@ -90,6 +90,10 @@ export const ro: Strings = {
   tempUp: "Crește temperatura",
   done: "Gata",
   cancel: "Anulează",
+  setbackTitle: "Temperatură redusă",
+  save: "Salvează",
+  saveFailed: (message: string) => `Salvarea a eșuat: ${message}`,
+  setbackReadOnly: "Se setează pe regulator.",
   change: "Modificare:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} neschimbat(e)`,
