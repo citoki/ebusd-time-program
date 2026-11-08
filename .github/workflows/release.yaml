@@ -35,5 +35,7 @@ jobs:
                 uses: softprops/action-gh-release@v3
                 with:
                     draft: true
+                    # a tag with a "-" (v0.5.0-beta.1) is a beta: published as pre-release, never "Latest"
+                    prerelease: ${{ contains(github.ref_name, '-') }}
                     generate_release_notes: true
                     files: dist/ebusd-time-program-card.js
