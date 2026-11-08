@@ -1,5 +1,6 @@
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { programFingerprint, readProgram, type ProgramRead, type ReadStatus } from "./adapters/mqtt.js";
+import { serviceStore, writeDayService } from "./adapters/vaillant-ebus.js";
 import { renderApplyBar } from "./components/apply-bar.js";
 import { renderBusyPanel } from "./components/busy-panel.js";
 import { renderDayPicker, selectionLabel } from "./components/day-picker.js";
@@ -120,6 +121,8 @@ export class EbusdTimeProgramCard extends LitElement {
   private _waiters: (() => void)[] = [];
   private _successTimer: ReturnType<typeof setTimeout> | undefined;
   private _clock: ReturnType<typeof setInterval> | undefined;
+  /** Source `vaillant_ebus`: unsubscribe from the shared program reads. */
+  private _unsubscribe: (() => void) | undefined;
   /** Rendered as a thumbnail in HA's "Add card" dialog: show a picture instead of live data. */
   private _inPicker = false;
 
@@ -154,6 +157,7 @@ export class EbusdTimeProgramCard extends LitElement {
     this._sheet = null;
     this._job = null;
     this._fingerprint = "";
+    this._loadService();
     this._refresh();
     this.dataset.theme = this._cfg.theme;
     this.requestUpdate(); // _cfg is not reactive; HA calls setConfig again on YAML edits
@@ -161,6 +165,7 @@ export class EbusdTimeProgramCard extends LitElement {
 
   set hass(hass: Hass) {
     this._hass = hass;
+    this._loadService();
     this._refresh();
     const waiters = this._waiters;
     this._waiters = [];
@@ -172,7 +177,12 @@ export class EbusdTimeProgramCard extends LitElement {
     this._inPicker = insideCardPicker(this);
     window.addEventListener("beforeunload", this._onBeforeUnload);
     this._now = new Date();
-    this._clock = setInterval(() => (this._now = new Date()), 60_000);
+    this._clock = setInterval(() => {
+      this._now = new Date();
+      this._loadService();
+    }, 60_000);
+    this._unsubscribe = serviceStore.subscribe(() => this._refresh());
+    this._loadService();
   }
 
   override disconnectedCallback(): void {
@@ -180,6 +190,8 @@ export class EbusdTimeProgramCard extends LitElement {
     window.removeEventListener("beforeunload", this._onBeforeUnload);
     clearTimeout(this._successTimer);
     clearInterval(this._clock);
+    this._unsubscribe?.();
+    this._unsubscribe = undefined;
   }
 
   private get _busy(): boolean {
@@ -217,19 +229,38 @@ export class EbusdTimeProgramCard extends LitElement {
 
   // ---------- data ----------
 
-  /** Re-read only when one of the program sensors changed. */
+  /**
+   * Source `vaillant_ebus`: read the programs through the integration's action when
+   * the last read is older than the refresh interval (shared by all cards on the page).
+   */
+  private _loadService(): void {
+    const cfg = this._cfg;
+    const hass = this._hass;
+    if (!cfg || !hass || cfg.source !== "vaillant_ebus" || !this.isConnected || this._inPicker) return;
+    const maxAge = cfg.refreshInterval > 0 ? cfg.refreshInterval * 1000 : Infinity;
+    for (const p of cfg.programs) void serviceStore.load(hass, cfg, p.spec, maxAge);
+  }
+
+  /** Re-read only when one of the program sensors (or the shared service reads) changed. */
   private _refresh(): void {
     const cfg = this._cfg;
     const hass = this._hass;
     if (!cfg || !hass) return;
+    const service = cfg.source === "vaillant_ebus";
     const entities = cfg.programs.map((p) => setbackEntityId(cfg, p, hass.states));
     const setback = entities.map((id) => (id ? hass.states[id]?.state : undefined));
-    const fp =
-      cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#") + `#${entities.join("|")}#${setback.join("|")}`;
+    const programs = service
+      ? `service:${serviceStore.version}`
+      : cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#");
+    const fp = programs + `#${entities.join("|")}#${setback.join("|")}`;
     if (fp === this._fingerprint) return;
     this._fingerprint = fp;
-    this._reads = cfg.programs.map((p) => readProgram(hass, cfg, p.spec));
-    this._setbackTargets = cfg.programs.map((p, i) => ({ entity: entities[i]!, write: setbackWrite(cfg, p, entities[i]!) }));
+    this._reads = cfg.programs.map((p) => (service ? serviceStore.get(cfg, p.spec) : readProgram(hass, cfg, p.spec)));
+    this._setbackTargets = cfg.programs.map((p, i) => {
+      const write = setbackWrite(cfg, p, entities[i]!);
+      // without MQTT, only a number entity (e.g. the integration's own) can be written
+      return { entity: entities[i]!, write: service && write?.kind === "mqtt" ? null : write };
+    });
     this._setback = setback.map((s) => {
       const value = s === undefined ? NaN : Number.parseFloat(s);
       return Number.isFinite(value) ? value : null;
@@ -383,6 +414,7 @@ export class EbusdTimeProgramCard extends LitElement {
     const program = this._active;
     const spec = cfg.programs[program]!.spec;
     const countMessage = this._reads[program]?.countMessage ?? cfg.countMessage ?? COUNT_MESSAGE_CANDIDATES[0];
+    const service = cfg.source === "vaillant_ebus";
     this._sheet = null;
     this._notice = null;
     const runner = new WriteJob(
@@ -392,7 +424,15 @@ export class EbusdTimeProgramCard extends LitElement {
         publish: async (topic, payload) => {
           await this._hass!.callService!("mqtt", "publish", { topic, payload });
         },
-        readDay: (day) => (this._hass ? readProgram(this._hass, cfg, spec).days[day] : null),
+        writeDay: service
+          ? async (day, slots) => {
+              const stored = await writeDayService(this._hass!, cfg, spec, day, slots);
+              serviceStore.setDay(cfg, spec, day, stored);
+              return stored;
+            }
+          : undefined,
+        readDay: (day) =>
+          service ? serviceStore.get(cfg, spec).days[day] : this._hass ? readProgram(this._hass, cfg, spec).days[day] : null,
         waitForUpdate: (ms) =>
           new Promise<void>((resolve) => {
             const timer = setTimeout(resolve, ms);
@@ -531,7 +571,7 @@ export class EbusdTimeProgramCard extends LitElement {
       <ul class="mono">
         ${read.missing.map((id) => html`<li><code>${id}</code></li>`)}
       </ul>
-      <p class="hint">${UI.missingHelp}</p>
+      <p class="hint">${this._cfg?.source === "vaillant_ebus" ? UI.missingHelpService : UI.missingHelp}</p>
       ${extraZone ? html`<p class="hint">${UI.missingZone(programName(program), program.spec.id)}</p>` : nothing}
     </div>`;
   }
@@ -560,7 +600,12 @@ export class EbusdTimeProgramCard extends LitElement {
                 // no slot count while it is not known
                 summary: `${selected.length ? selectionLabel(selected) : "–"}${loading ? "" : ` · ${UI.slot(slots.length)}`}`,
                 slots: loading ? null : slots,
-                unavailable: this._reads[this._active]?.status === "offline" ? UI.offlineHelp : undefined,
+                unavailable:
+                  this._reads[this._active]?.status === "offline"
+                    ? cfg.source === "vaillant_ebus"
+                      ? UI.offlineHelpService
+                      : UI.offlineHelp
+                    : undefined,
                 issues: ctx.issues,
                 changed: slots.map((s) => !ctx.base.slots.some((b) => sameSlot(s, b))),
                 addBlocked: addBlocked(slots, spec),

@@ -18,6 +18,8 @@ export interface FakeOptions {
   ignoreWrites?: Set<string>;
   /** Make `mqtt.publish` reject (broker down). */
   failPublish?: boolean;
+  /** Make the `vaillant_ebus` actions reject like HA does when the integration is not loaded. */
+  noIntegration?: boolean;
 }
 
 interface Pending {
@@ -52,11 +54,56 @@ export class FakeEbusd {
       states: this.states,
       language: "en",
       callService: (domain, service, data) => {
+        if (domain === "vaillant_ebus") return this.vaillantService(service, data ?? {});
         if (domain !== "mqtt" || service !== "publish") return Promise.reject(new Error("unsupported service"));
         if (this.opts.failPublish) return Promise.reject(new Error("MQTT broker not available"));
         return this.publish(String(data?.topic), String(data?.payload));
       },
     };
+  }
+
+  /** Every `vaillant_ebus` action call, in order. */
+  readonly serviceLog: { service: string; data: Record<string, unknown> }[] = [];
+
+  /**
+   * The Vaillant eBUS integration's `read_time_program` / `write_time_program`, answered
+   * from the controller memory like the integration does (HA's `{ context, response }`,
+   * errors as `{ code, message }`). A write reads the day back; an ignored write fails.
+   */
+  private async vaillantService(service: string, data: Record<string, unknown>): Promise<unknown> {
+    this.serviceLog.push({ service, data });
+    const fail = (code: string, message: string) => Promise.reject({ code, message });
+    if (this.opts.noIntegration) return fail("service_not_found", `Action vaillant_ebus.${service} not found.`);
+    const spec = Object.values(PROGRAMS).find((p) => p.messagePrefix === data.program);
+    if (!spec || detectCountMessage(this.hass(), this.cfg, spec) === null) {
+      return fail("home_assistant_error", `${String(data.program)} is not available on this controller`);
+    }
+    const out = (slots: Slot[]) =>
+      slots.map((s) => ({ start: s.start, end: s.end, temperature: spec.temp ? (s.temp ?? null) : null }));
+    if (service === "read_time_program") {
+      await sleep(this.opts.delay ?? 0);
+      const days = Object.fromEntries(DAYS.map((d) => [d, out(this.controllerDay(spec, d))]));
+      return { context: {}, response: { program: spec.messagePrefix, circuit: "ctlv2", temperature: !!spec.temp, days, incomplete: [] } };
+    }
+    if (service !== "write_time_program") return fail("service_not_found", `Action vaillant_ebus.${service} not found.`);
+    const written: Record<string, unknown> = {};
+    for (const day of (data.days as Day[]) ?? []) {
+      const slots = ((data.slots as { start: string; end: string; temperature?: number }[]) ?? []).map((s): Slot => {
+        const slot: Slot = { start: s.start, end: s.end };
+        if (spec.temp && s.temperature !== undefined) slot.temp = s.temperature;
+        return slot;
+      });
+      await sleep((this.opts.delay ?? 0) * (Math.max(slots.length, 1) + 4)); // slot writes + read-back
+      if (!this.opts.ignoreWrites?.has(writeMessage(spec, day))) this.controller.set(key(spec, day), slots);
+      const stored = this.controllerDay(spec, day);
+      if (JSON.stringify(stored) !== JSON.stringify(slots)) {
+        const done = Object.keys(written).join(", ") || "none";
+        const name = day[0]!.toUpperCase() + day.slice(1);
+        return fail("home_assistant_error", `The controller did not store the new time slots for ${name} (days already written: ${done})`);
+      }
+      written[day] = out(stored);
+    }
+    return { context: {}, response: { program: spec.messagePrefix, circuit: "ctlv2", days: written } };
   }
 
   /** Controller memory (what the VRC 720 has), independent of what HA shows. */

@@ -114,10 +114,17 @@ describe("config", () => {
     // tab: the configured name, else the short form
     expect(c.programs.map((p) => programTabLabel(p))).toEqual(["CC", "Living"]);
   });
+  it("source: MQTT by default; vaillant_ebus with entry and refresh interval", () => {
+    expect([cfg.source, cfg.entryId, cfg.refreshInterval]).toEqual(["mqtt", null, 300]);
+    const c = resolveConfig({ type: "x", source: "vaillant_ebus", entry_id: " abc ", refresh_interval: 0 });
+    expect([c.source, c.entryId, c.refreshInterval]).toEqual(["vaillant_ebus", "abc", 0]);
+  });
   it.each([
     [{ programs: [] }, "non-empty"],
     [{ programs: ["z4"] }, "Unknown program"],
     [{ programs: ["cc", "cc"] }, "twice"],
+    [{ source: "rest" }, "Unknown source"],
+    [{ refresh_interval: -1 }, "refresh_interval"],
   ])("rejects %j", (extra, msg) => {
     expect(() => resolveConfig({ type: "x", ...(extra as object) })).toThrow(ConfigError);
     expect(() => resolveConfig({ type: "x", ...(extra as object) })).toThrow(msg);

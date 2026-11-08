@@ -88,6 +88,30 @@ await check("ebusd offline: program shows the error", "state=offline", async (ca
   if (!status?.includes("not available")) throw new Error(`status should say offline: ${status}`);
 });
 
+await check("source vaillant_ebus: read through the action and write a temperature", "source=vaillant_ebus&delay=0", async (card) => {
+  await card.locator(".slot-row").first().waitFor();
+  expectEqual(await card.locator(".slot-row").count(), 2, "Z1 slots Mo–Fr");
+  await card.locator(".field.pill").first().click();
+  const sheet = card.locator("dialog[open]");
+  await sheet.locator(".round-btn").nth(1).click(); // +0.5 °C
+  await sheet.locator(".btn.primary").click(); // Done
+  await card.locator(".apply-bar .btn.primary").click(); // Apply to 5 days
+  await card.locator(".busy-panel.done").waitFor({ timeout: 15_000 });
+  expectEqual(await text(card.locator(".field.pill").first()), "21.5 °C", "temperature after write");
+});
+
+await check("source vaillant_ebus: a day the controller ignores stops the write", "source=vaillant_ebus&delay=0&ignore=Z1Timer_Tuesday", async (card) => {
+  await card.locator(".slot-row").first().waitFor();
+  await card.locator(".field.pill").first().click();
+  const sheet = card.locator("dialog[open]");
+  await sheet.locator(".round-btn").nth(1).click();
+  await sheet.locator(".btn.primary").click();
+  await card.locator(".apply-bar .btn.primary").click();
+  await card.locator(".busy-panel.failed").waitFor({ timeout: 15_000 });
+  const panel = await text(card.locator(".busy-panel"));
+  if (!panel.includes("did not store")) throw new Error(`failure should name the reason: ${panel}`);
+});
+
 await browser.close();
 await server.close();
 console.log(failed ? `\n${failed} check(s) failed` : "\nall checks passed");
