@@ -83,7 +83,7 @@ mode: preview
 stacked: true      # all programs below each other instead of tabs
 ```
 
-![Preview mode with all programs stacked](assets/preview-stacked.webp){ .shot }
+![Preview mode with all programs stacked](assets/preview-stacked.webp){ .shot .card }
 
 If all slots of a program have the same temperature it is shown once in the heading (**Hot water · 50.0 °C**);
 otherwise slots of 90 minutes or more show their temperature inside the bar. Change this with
@@ -99,7 +99,7 @@ preview_days: today_tomorrow   # or: today
 preview_label: false           # only the bars; hover a bar for its times
 ```
 
-![Preview mode with today and tomorrow, without the label line](assets/preview-today.webp){ .shot }
+![Preview mode with today and tomorrow, without the label line](assets/preview-today.webp){ .shot .card }
 
 The rows move on at midnight. Without the label line, the times are only visible by hovering, so keep
 `preview_label: true` on dashboards used on phones.

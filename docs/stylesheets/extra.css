@@ -6,3 +6,7 @@
 .md-typeset img.narrow {
   max-width: 320px;
 }
+/* Preview-mode cards: shown at their real width (400 px frame), like a small dashboard card. */
+.md-typeset img.card {
+  max-width: 400px;
+}
