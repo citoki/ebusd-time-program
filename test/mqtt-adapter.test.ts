@@ -3,7 +3,7 @@ import { detectCountMessage, programFingerprint, readProgram } from "../src/adap
 import { accentStyle, ConfigError, entityId, resolveConfig, setbackEntityId, setbackWrite, topic } from "../src/config.js";
 import type { Hass } from "../src/hass.js";
 import { uniformTemp } from "../src/components/week-preview.js";
-import { programName } from "../src/i18n/index.js";
+import { programName, programTabLabel } from "../src/i18n/index.js";
 import { PROGRAMS } from "../src/model/programs.js";
 import { SAMPLE_SETBACK, SAMPLE_WEEKS, SAMPLE_Z2, sampleStates } from "./fixtures/hass-states.js";
 
@@ -130,6 +130,8 @@ describe("config", () => {
       ["cc", "Circulation", "CcTimer"],
       ["z1", "Living", "Hc1Timer"],
     ]);
+    // tab: the configured name, else the short form
+    expect(c.programs.map((p) => programTabLabel(p))).toEqual(["CC", "Living"]);
   });
   it.each([
     [{ programs: [] }, "non-empty"],

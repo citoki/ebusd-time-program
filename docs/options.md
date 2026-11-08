@@ -68,7 +68,7 @@ An entry is either the id or an object with these keys:
 | Key | Description |
 |---|---|
 | `id` | Program id from the table above (required) |
-| `name` | Own name for tab and heading, e.g. `Ground floor` |
+| `name` | Own name for tab and heading, e.g. `Ground floor`. Without it the tab shows the short form (`Z1`, `HWC`, `CC`) and the heading the full name in the card's language |
 | `message_prefix` | ebusd message prefix if your CSV names it differently, e.g. `Z2Timer` |
 | `setback_entity` | Zones: entity with the set-back temperature |
 
