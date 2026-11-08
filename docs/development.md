@@ -39,10 +39,14 @@ More settings are URL parameters, listed at the top of `dev/main.ts`:
 
 ```sh
 npm test           # unit tests (vitest)
+npm run test:e2e   # browser smoke test of the dev page (Playwright, starts its own dev server)
 npm run typecheck  # TypeScript
 npm run build      # dist/ebusd-time-program-card.js
 npm run screenshot -- shot.png "tab=1&layout=wide"   # screenshot of the dev page (Playwright)
 ```
+
+The smoke test needs a browser once: `npx playwright install chromium`. It edits and writes a slot, saves the
+set-back temperature, opens the info dialog, and checks preview mode, German texts and the offline state.
 
 ## Try it in Home Assistant
 
