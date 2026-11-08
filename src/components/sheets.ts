@@ -26,34 +26,59 @@ export interface SheetProps {
   onClosed: () => void;
 }
 
-/**
- * Bottom sheet (narrow screens) / centred popover (wide) as a native modal
- * <dialog>. The card calls showModal() after it is rendered. Values only reach
- * the draft on Done; Cancel and Escape discard them.
- */
+/** Slot value editor. Values only reach the draft on Done; Cancel and Escape discard them. */
 export function renderSheet(p: SheetProps): TemplateResult {
-  const close = (e: Event) => (e.currentTarget as HTMLElement).closest("dialog")?.close();
   const done = (e: Event) => {
     p.onDone();
-    close(e);
-  };
-  const onKey = (e: KeyboardEvent) => {
-    if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement)) {
-      e.preventDefault();
-      done(e);
-    }
+    closeDialog(e);
   };
   const { field, index } = p.sheet;
-  return html`<dialog class="sheet" aria-labelledby="sheet-title" @close=${p.onClosed} @keydown=${onKey}>
-    <h3 class="sheet-title" id="sheet-title">${UI.sheetTitle(field, index + 1)}</h3>
-    ${field === "temp" ? (p.spec.temp ? renderTemp(p.spec, p.spec.temp, p.sheet.value, p.onChange) : nothing) : renderTime(p, field)}
-    <div class="sheet-issues" aria-live="polite">
-      ${p.issues.map((i) => html`<p class="issue ${i.level}">${i.level === "info" ? "ⓘ" : "⚠"} ${issueMessage(i)}</p>`)}
-    </div>
-    <div class="sheet-actions">
-      <button class="btn" @click=${close}>${UI.cancel}</button>
-      <button class="btn primary" @click=${done}>✓ ${UI.done}</button>
-    </div>
+  return renderFrame({
+    title: UI.sheetTitle(field, index + 1),
+    body: field === "temp" ? (p.spec.temp ? renderTemp(p.spec, p.spec.temp, p.sheet.value, p.onChange) : nothing) : renderTime(p, field),
+    issues: p.issues.map((i) => issueLine(i.level, issueMessage(i))),
+    actions: html`<button class="btn" @click=${closeDialog}>${UI.cancel}</button>
+      <button class="btn primary" @click=${done}>✓ ${UI.done}</button>`,
+    onClosed: p.onClosed,
+    onKey: (e) => {
+      if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement)) {
+        e.preventDefault();
+        done(e);
+      }
+    },
+  });
+}
+
+// ---------- shared dialog frame ----------
+
+/** Close the <dialog> around the clicked element; the card resets its state on the `close` event. */
+const closeDialog = (e: Event) => (e.currentTarget as HTMLElement).closest("dialog")?.close();
+
+const issueLine = (level: string, text: string) =>
+  html`<p class="issue ${level}">${level === "info" ? "ⓘ" : "⚠"} ${text}</p>`;
+
+interface FrameProps {
+  cls?: string;
+  title: string | TemplateResult;
+  body: unknown;
+  /** Lines below the body; undefined = no issue area at all. */
+  issues?: unknown;
+  actions: TemplateResult;
+  onClosed: () => void;
+  onKey?: (e: KeyboardEvent) => void;
+}
+
+/**
+ * Bottom sheet (narrow screens) / centred popover (wide) as a native modal
+ * <dialog>; the card opens it with showModal() after rendering. Only one is open
+ * at a time, so the title id can be shared.
+ */
+function renderFrame(f: FrameProps): TemplateResult {
+  return html`<dialog class="sheet ${f.cls ?? ""}" aria-labelledby="sheet-title" @close=${f.onClosed} @keydown=${f.onKey ?? nothing}>
+    <h3 class="sheet-title" id="sheet-title">${f.title}</h3>
+    ${f.body}
+    ${f.issues === undefined ? nothing : html`<div class="sheet-issues" aria-live="polite">${f.issues}</div>`}
+    <div class="sheet-actions">${f.actions}</div>
   </dialog>`;
 }
 
@@ -169,34 +194,29 @@ export interface InfoSheetProps {
   onClosed: () => void;
 }
 
-/** Same native modal <dialog> as the slot sheet; the card calls showModal(). */
+/** Info dialog of a program (same frame as the slot sheet). */
 export function renderInfoSheet(p: InfoSheetProps): TemplateResult {
-  const close = (e: Event) => (e.currentTarget as HTMLElement).closest("dialog")?.close();
   const sb = p.setback;
   const editable = sb !== undefined && sb.writable && sb.value !== null;
-  return html`<dialog class="sheet info-sheet" aria-labelledby="info-title" @close=${p.onClosed}>
-    <h3 class="sheet-title" id="info-title">${p.icon ? renderIcon(p.icon) : nothing}${p.title}</h3>
-    <p class="info-text">${p.text}</p>
-    ${editable
-      ? renderTemp(sb.spec, sb.range, sb.value!, sb.onChange)
-      : sb && sb.value !== null
-        ? html`<div class="temp-big readonly">
-            <output class="temp-value"><span class="dot ${tempBand(sb.spec, sb.value) ?? ""}"></span>${formatTemp(sb.value)} °C</output>
-          </div>`
-        : nothing}
-    ${sb && !sb.writable ? html`<p class="hint">${UI.setbackReadOnly}</p>` : nothing}
-    ${sb
-      ? html`<div class="sheet-issues" aria-live="polite">
-          ${sb.error ? html`<p class="issue error">⚠ ${sb.error}</p>` : nothing}
-        </div>`
-      : nothing}
-    <div class="sheet-actions">
+  return renderFrame({
+    cls: "info-sheet",
+    title: html`${p.icon ? renderIcon(p.icon) : nothing}${p.title}`,
+    body: html`<p class="info-text">${p.text}</p>
       ${editable
-        ? html`<button class="btn" @click=${close}>${UI.cancel}</button>
-            <button class="btn primary" ?disabled=${!sb.dirty || sb.saving} @click=${sb.onSave}>✓ ${UI.save}</button>`
-        : html`<button class="btn primary" @click=${close}>${UI.close}</button>`}
-    </div>
-  </dialog>`;
+        ? renderTemp(sb.spec, sb.range, sb.value!, sb.onChange)
+        : sb && sb.value !== null
+          ? html`<div class="temp-big readonly">
+              <output class="temp-value"><span class="dot ${tempBand(sb.spec, sb.value) ?? ""}"></span>${formatTemp(sb.value)} °C</output>
+            </div>`
+          : nothing}
+      ${sb && !sb.writable ? html`<p class="hint">${UI.setbackReadOnly}</p>` : nothing}`,
+    issues: sb ? (sb.error ? issueLine("error", sb.error) : nothing) : undefined,
+    actions: editable
+      ? html`<button class="btn" @click=${closeDialog}>${UI.cancel}</button>
+          <button class="btn primary" ?disabled=${!sb.dirty || sb.saving} @click=${sb.onSave}>✓ ${UI.save}</button>`
+      : html`<button class="btn primary" @click=${closeDialog}>${UI.close}</button>`,
+    onClosed: p.onClosed,
+  });
 }
 
 /** mdi:weather-night, built in so the default icon also shows without HA's icon set. */

@@ -7,7 +7,7 @@ import { renderTabs } from "./components/program-tabs.js";
 import { renderInfoSheet, renderSheet, SETBACK_ICON, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
-import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, resolveConfig, setbackEntityId, setbackWrite, type CardConfig, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
+import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, resolveConfig, setbackEntityId, setbackWrite, type CardConfig, type SetbackWrite, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { formatTemp, programName, setLanguage, UI } from "./i18n/index.js";
 import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
@@ -113,6 +113,8 @@ export class EbusdTimeProgramCard extends LitElement {
   private _cfg: ResolvedConfig | undefined;
   private _hass: Hass | undefined;
   private _fingerprint = "";
+  /** Per program: the set-back entity and how to write it (refreshed with `_setback`). */
+  private _setbackTargets: { entity: string | null; write: SetbackWrite | null }[] = [];
   private _runner: WriteJob | null = null;
   /** Resolvers of the running job waiting for the next hass update. */
   private _waiters: (() => void)[] = [];
@@ -220,14 +222,14 @@ export class EbusdTimeProgramCard extends LitElement {
     const cfg = this._cfg;
     const hass = this._hass;
     if (!cfg || !hass) return;
-    const setback = cfg.programs.map((p) => {
-      const id = setbackEntityId(cfg, p, hass.states);
-      return id ? hass.states[id]?.state : undefined;
-    });
-    const fp = cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#") + `#${setback.join("|")}`;
+    const entities = cfg.programs.map((p) => setbackEntityId(cfg, p, hass.states));
+    const setback = entities.map((id) => (id ? hass.states[id]?.state : undefined));
+    const fp =
+      cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#") + `#${entities.join("|")}#${setback.join("|")}`;
     if (fp === this._fingerprint) return;
     this._fingerprint = fp;
     this._reads = cfg.programs.map((p) => readProgram(hass, cfg, p.spec));
+    this._setbackTargets = cfg.programs.map((p, i) => ({ entity: entities[i]!, write: setbackWrite(cfg, p, entities[i]!) }));
     this._setback = setback.map((s) => {
       const value = s === undefined ? NaN : Number.parseFloat(s);
       return Number.isFinite(value) ? value : null;
@@ -429,14 +431,8 @@ export class EbusdTimeProgramCard extends LitElement {
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
-    if (changed.has("_sheet") && this._sheet) {
-      const dialog = this.renderRoot.querySelector<HTMLDialogElement>("dialog.sheet:not(.info-sheet)");
-      if (dialog && !dialog.open) dialog.showModal();
-    }
-    if (changed.has("_infoDialog") && this._infoDialog) {
-      const dialog = this.renderRoot.querySelector<HTMLDialogElement>("dialog.info-sheet");
-      if (dialog && !dialog.open) dialog.showModal();
-    }
+    // dialogs are rendered closed; open whichever just appeared
+    this.renderRoot.querySelectorAll<HTMLDialogElement>("dialog.sheet:not([open])").forEach((d) => d.showModal());
   }
 
   protected override render(): TemplateResult | typeof nothing {
@@ -633,9 +629,8 @@ export class EbusdTimeProgramCard extends LitElement {
     const cfg = this._cfg;
     const hass = this._hass;
     const value = this._setbackDraft;
-    if (!cfg || !hass?.callService || value === null) return;
-    const target = setbackWrite(cfg, cfg.programs[this._active]!, hass.states);
-    if (!target) return;
+    const target = this._setbackTargets[this._active]?.write;
+    if (!cfg || !hass?.callService || value === null || !target) return;
     this._setbackSaving = true;
     this._setbackError = null;
     try {
@@ -656,9 +651,9 @@ export class EbusdTimeProgramCard extends LitElement {
     const onClosed = this._onInfoClosed;
     if (!spec.setbackMessages || !spec.temp) return renderInfoSheet({ title: UI.info, text: infoText(spec, null), onClosed });
     const current = this._setback[this._active] ?? null;
-    const writable = !!this._hass?.callService && setbackWrite(cfg, program, this._hass.states) !== null;
-    const entity = this._hass?.states[setbackEntityId(cfg, program, this._hass.states) ?? ""];
-    const ownIcon = entity?.attributes.icon;
+    const target = this._setbackTargets[this._active];
+    const writable = !!this._hass?.callService && !!target?.write;
+    const ownIcon = target?.entity ? this._hass?.states[target.entity]?.attributes.icon : undefined;
     return renderInfoSheet({
       title: `${UI.setbackTitle} · ${programName(program)}`,
       // the entity's own icon if it has one, else the night icon
