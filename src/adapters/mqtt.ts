@@ -23,7 +23,7 @@ export interface ProgramRead {
   status: ReadStatus;
   /** Per day; null while that day's sensors are not (yet) usable. */
   days: Record<Day, Slot[] | null>;
-  /** Detected/used count message name, e.g. `Timeframes`. */
+  /** Detected/used count message name, e.g. `Timeslots` (older configs: `Timeframes`). */
   countMessage: string | null;
   /** Entity ids that do not exist in HA (only filled when status is `missing`). */
   missing: string[];

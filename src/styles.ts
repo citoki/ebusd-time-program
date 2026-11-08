@@ -514,12 +514,6 @@ export const cardStyles = css`
     gap: 8px;
     margin-top: 8px;
   }
-  .dry-list {
-    padding-left: 22px;
-  }
-  .dry-list li {
-    margin-bottom: 6px;
-  }
 
   /* ---------- busy panel ---------- */
   .busy-title {
@@ -624,14 +618,12 @@ export const cardStyles = css`
     }
   }
   .sheet-title {
-    margin: 0 0 12px;
-    font-size: 1rem;
-    font-weight: 500;
-  }
-  .info-sheet .sheet-title {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1rem;
+    font-weight: 500;
   }
   .title-icon {
     flex: none;
@@ -921,12 +913,6 @@ export const cardStyles = css`
     justify-content: space-between;
     font-size: 0.7rem;
     color: var(--etp-muted);
-  }
-  .footnote {
-    padding: 10px 16px 14px;
-    font-size: 0.8rem;
-    color: var(--etp-muted);
-    border-top: 1px solid var(--etp-divider);
   }
 
   @media (prefers-reduced-motion: no-preference) {

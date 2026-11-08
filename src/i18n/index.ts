@@ -72,3 +72,8 @@ export function issueMessage(issue: Issue): string {
 export function programName(p: ResolvedProgram): string {
   return p.name ?? UI.programNames[p.spec.id];
 }
+
+/** Tab label: the configured name, else the short form (Z1, HWC, CC). */
+export function programTabLabel(p: ResolvedProgram): string {
+  return p.name ?? UI.programShort[p.spec.id];
+}

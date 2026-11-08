@@ -1,7 +1,7 @@
 import { html, type TemplateResult } from "lit";
 import type { ReadStatus } from "../adapters/mqtt.js";
 import type { ResolvedProgram } from "../config.js";
-import { programName, UI } from "../i18n/index.js";
+import { programName, programTabLabel, UI } from "../i18n/index.js";
 
 export function renderTabs(
   programs: readonly ResolvedProgram[],
@@ -36,7 +36,7 @@ export function renderTabs(
               : programName(p)}
           @click=${() => onSelect(i)}
         >
-          ${UI.programShort[p.spec.id]}${dirty[i]
+          ${programTabLabel(p)}${dirty[i]
             ? html`<span class="tab-dirty" aria-label=${UI.unsaved}> •</span>`
             : ""}
         </button>`,

@@ -207,13 +207,12 @@ export type SetbackWrite =
   | { kind: "mqtt"; topic: string };
 
 /**
- * Write path for a zone's set-back temperature, or null when the card cannot
- * change it. A `number`/`input_number` entity is set through its own service (so
- * a configured `setback_entity` works too); a derived ebusd sensor is written
- * through the message's MQTT `set` topic, like the time program.
+ * Write path for a zone's set-back entity `id` (from setbackEntityId()), or null
+ * when the card cannot change it. A `number`/`input_number` entity is set through
+ * its own service (so a configured `setback_entity` works too); a derived ebusd
+ * sensor is written through the message's MQTT `set` topic, like the time program.
  */
-export function setbackWrite(cfg: ResolvedConfig, program: ResolvedProgram, states?: Record<string, unknown>): SetbackWrite | null {
-  const id = setbackEntityId(cfg, program, states);
+export function setbackWrite(cfg: ResolvedConfig, program: ResolvedProgram, id: string | null): SetbackWrite | null {
   if (!id) return null;
   const domain = id.slice(0, id.indexOf("."));
   if (domain === "number" || domain === "input_number") return { kind: "service", domain, entity: id };
