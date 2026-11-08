@@ -34,7 +34,7 @@ export function renderSheet(p: SheetProps): TemplateResult {
   };
   const { field, index } = p.sheet;
   return renderFrame({
-    title: UI.sheetTitle(field, index + 1),
+    title: html`${renderIcon(SLOT_ICON)}${UI.sheetTitle(field, index + 1)}`,
     body: field === "temp" ? (p.spec.temp ? renderTemp(p.spec, p.spec.temp, p.sheet.value, p.onChange) : nothing) : renderTime(p, field),
     issues: p.issues.map((i) => issueLine(i.level, issueMessage(i))),
     actions: html`<button class="btn" @click=${closeDialog}>${UI.cancel}</button>
@@ -219,13 +219,23 @@ export function renderInfoSheet(p: InfoSheetProps): TemplateResult {
   });
 }
 
-/** mdi:weather-night, built in so the default icon also shows without HA's icon set. */
+/** Built-in MDI paths, so the default icons also show without HA's icon set (e.g. on the dev page). */
 const MDI_WEATHER_NIGHT = svg`<path d="M17.75,4.09L15.22,6.03L16.13,9.09L13.5,7.28L10.87,9.09L11.78,6.03L9.25,4.09L12.44,4L13.5,1L14.56,4L17.75,4.09M21.25,11L19.61,12.25L20.2,14.23L18.5,13.06L16.8,14.23L17.39,12.25L15.75,11L17.81,10.95L18.5,9L19.19,10.95L21.25,11M18.97,15.95C19.8,15.87 20.69,17.05 20.16,17.8C19.84,18.25 19.5,18.67 19.08,19.07C15.17,23 8.84,23 4.94,19.07C1.03,15.17 1.03,8.83 4.94,4.93C5.34,4.53 5.76,4.17 6.21,3.85C6.96,3.32 8.14,4.21 8.06,5.04C7.79,7.9 8.75,10.87 10.95,13.06C13.14,15.26 16.1,16.22 18.97,15.95M17.33,17.97C14.5,17.81 11.7,16.64 9.53,14.5C7.36,12.31 6.2,9.5 6.04,6.68C3.23,9.82 3.34,14.64 6.35,17.66C9.37,20.67 14.19,20.78 17.33,17.97Z" />`;
+const MDI_WEATHER_PARTLY_CLOUDY = svg`<path d="M12.74,5.47C15.1,6.5 16.35,9.03 15.92,11.46C17.19,12.56 18,14.19 18,16V16.17C18.31,16.06 18.65,16 19,16A3,3 0 0,1 22,19A3,3 0 0,1 19,22H6A4,4 0 0,1 2,18A4,4 0 0,1 6,14H6.27C5,12.45 4.6,10.24 5.5,8.26C6.72,5.5 9.97,4.24 12.74,5.47M11.93,7.3C10.16,6.5 8.09,7.31 7.31,9.07C6.85,10.09 6.93,11.22 7.41,12.13C8.5,10.83 10.16,10 12,10C12.7,10 13.38,10.12 14,10.34C13.9,9.06 13.08,7.86 11.93,7.3M13.55,3.64C13,3.4 12.45,3.23 11.88,3.12L14.37,1.82L15.27,4.71C14.76,4.29 14.19,3.93 13.55,3.64M6.09,4.44C5.6,4.79 5.17,5.19 4.8,5.63L4.91,2.82L7.87,3.5C7.25,3.71 6.65,4.03 6.09,4.44M18,9.71C17.91,9.12 17.78,8.55 17.59,8L19.97,9.5L17.92,11.73C18.03,11.08 18.05,10.4 18,9.71M3.04,11.3C3.11,11.9 3.24,12.47 3.43,13L1.06,11.5L3.1,9.28C3,9.93 2.97,10.61 3.04,11.3M19,18H16V16A4,4 0 0,0 12,12A4,4 0 0,0 8,16H6A2,2 0 0,0 4,18A2,2 0 0,0 6,20H19A1,1 0 0,0 20,19A1,1 0 0,0 19,18Z" />`;
+/** Set-back dialog (outside the slots). */
 export const SETBACK_ICON = "mdi:weather-night";
+/** Slot dialog (the heating / comfort periods). */
+const SLOT_ICON = "mdi:weather-partly-cloudy";
+const BUILT_IN: Record<string, ReturnType<typeof svg>> = {
+  [SETBACK_ICON]: MDI_WEATHER_NIGHT,
+  [SLOT_ICON]: MDI_WEATHER_PARTLY_CLOUDY,
+};
 
-function renderIcon(name: string): TemplateResult {
-  if (name !== SETBACK_ICON && customElements.get("ha-icon")) {
-    return html`<ha-icon class="title-icon" .icon=${name} aria-hidden="true"></ha-icon>`;
+/** Built-in icons are drawn inline; any other MDI name (an entity's own icon) needs HA's <ha-icon>. */
+function renderIcon(name: string): TemplateResult | typeof nothing {
+  const path = BUILT_IN[name];
+  if (path) {
+    return html`<svg class="title-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">${path}</svg>`;
   }
-  return html`<svg class="title-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">${MDI_WEATHER_NIGHT}</svg>`;
+  return customElements.get("ha-icon") ? html`<ha-icon class="title-icon" .icon=${name} aria-hidden="true"></ha-icon>` : nothing;
 }

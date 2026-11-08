@@ -618,14 +618,12 @@ export const cardStyles = css`
     }
   }
   .sheet-title {
-    margin: 0 0 12px;
-    font-size: 1rem;
-    font-weight: 500;
-  }
-  .info-sheet .sheet-title {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1rem;
+    font-weight: 500;
   }
   .title-icon {
     flex: none;
