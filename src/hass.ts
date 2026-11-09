@@ -12,5 +12,16 @@ export interface Hass {
   language?: string;
   /** Newer HA: the user's language setting. */
   locale?: { language?: string };
-  callService?: (domain: string, service: string, data?: Record<string, unknown>) => Promise<unknown>;
+  /**
+   * HA's `callService(domain, service, data, target, notifyOnError, returnResponse)`.
+   * With `returnResponse`, the service's data is in `response` (actions with `SupportsResponse`).
+   */
+  callService?: (
+    domain: string,
+    service: string,
+    data?: Record<string, unknown>,
+    target?: Record<string, unknown>,
+    notifyOnError?: boolean,
+    returnResponse?: boolean,
+  ) => Promise<unknown>;
 }

@@ -12,6 +12,8 @@ import { applyHaTheme, mountSettingsBar } from "./settings-bar.js";
 //   ignore=Z1Timer_Tuesday,...   writes the fake controller ACKs but never applies (-> failure)
 //   timeout=5            verify timeout in s (default 30)
 //   nomqtt=1             hass without callService
+//   source=vaillant_ebus read/write through the (fake) Vaillant eBUS integration's actions instead of MQTT
+//   refresh=60           vaillant_ebus: seconds between reads (default 300)
 //   state=startup|weekend|slot|offline|nohwc   start in a sensor-state scenario (toolbar on the page)
 //   programs=z1,z2,hwc   programs to show (the fake system has no Z2/Z3 sensors)
 //   lang=de|fr|en-GB|…   card language (default: hass.language = en)
@@ -43,6 +45,10 @@ if (params.get("nolabel")) config.preview_label = false;
 const layout = params.get("layout");
 if (layout) config.layout = layout as NonNullable<CardConfig["layout"]>;
 applyHaTheme(params.get("ha"));
+const source = params.get("source");
+if (source) config.source = source as NonNullable<CardConfig["source"]>;
+const refresh = params.get("refresh");
+if (refresh) config.refresh_interval = Number(refresh);
 const timeout = params.get("timeout");
 if (timeout) config.verify_timeout = Number(timeout);
 
@@ -55,6 +61,18 @@ const hassFor = (h: Hass): Hass => (params.get("nomqtt") ? { states: h.states, l
 const cards: HTMLElementTagNameMap["ebusd-time-program-card"][] = [];
 ebusd.onUpdate = (h) => {
   for (const card of cards) (card as unknown as { hass: Hass }).hass = hassFor(h);
+};
+// log the integration's actions the card calls
+const hassOf = ebusd.hass.bind(ebusd);
+ebusd.hass = () => {
+  const hass = hassOf();
+  return {
+    ...hass,
+    callService: (domain, name, data, ...rest) => {
+      if (domain === "vaillant_ebus") console.info(`${domain}.${name}`, data);
+      return hass.callService!(domain, name, data, ...rest);
+    },
+  };
 };
 // log what the card publishes, like the MQTT broker would see it
 const publish = ebusd.publish.bind(ebusd);

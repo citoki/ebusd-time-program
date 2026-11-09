@@ -8,6 +8,9 @@ export const THEMES: readonly CardTheme[] = ["brand", "default"];
 export type CardLayout = "auto" | "wide" | "narrow";
 export const LAYOUTS: readonly CardLayout[] = ["auto", "wide", "narrow"];
 export type CardMode = "edit" | "preview";
+/** Where the time programs come from: ebusd's MQTT sensors, or the Vaillant eBUS integration's actions. */
+export type CardSource = "mqtt" | "vaillant_ebus";
+export const SOURCES: readonly CardSource[] = ["mqtt", "vaillant_ebus"];
 export type TempLabels = "auto" | "always" | "never";
 export const TEMP_LABELS: readonly TempLabels[] = ["auto", "always", "never"];
 export const MODES: readonly CardMode[] = ["edit", "preview"];
@@ -28,6 +31,15 @@ export interface CardConfig {
   title?: string;
   /** UI language, e.g. `de`, `en-GB`; default: the HA user's language. */
   language?: string;
+  /**
+   * `mqtt` (default): ebusd's MQTT sensors and `mqtt.publish`.
+   * `vaillant_ebus`: the Vaillant eBUS integration's `read_time_program` / `write_time_program` actions.
+   */
+  source?: CardSource;
+  /** vaillant_ebus: config entry of the integration, only needed when several are set up. */
+  entry_id?: string;
+  /** vaillant_ebus: seconds between reads of the programs (default 300, 0 = only on load and after writes). */
+  refresh_interval?: number;
   mqtt_prefix?: string;
   circuit?: string;
   topic_template?: string;
@@ -78,6 +90,10 @@ export interface ResolvedConfig {
   title: string | null;
   /** null = follow HA's language. */
   language: string | null;
+  source: CardSource;
+  entryId: string | null;
+  /** Seconds between reads (vaillant_ebus source); 0 = no periodic reads. */
+  refreshInterval: number;
   prefix: string;
   circuit: string;
   topicTemplate: string;
@@ -134,6 +150,14 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   if (!MODES.includes(mode)) {
     throw new ConfigError(`Unknown mode "${String(mode)}" (supported: ${MODES.join(", ")})`);
   }
+  const source = config.source ?? "mqtt";
+  if (!SOURCES.includes(source)) {
+    throw new ConfigError(`Unknown source "${String(source)}" (supported: ${SOURCES.join(", ")})`);
+  }
+  const refreshInterval = config.refresh_interval ?? 300;
+  if (typeof refreshInterval !== "number" || !Number.isFinite(refreshInterval) || refreshInterval < 0) {
+    throw new ConfigError("`refresh_interval` must be a number of seconds (0 or more)");
+  }
   const tempLabels = config.temp_labels ?? "auto";
   if (!TEMP_LABELS.includes(tempLabels)) {
     throw new ConfigError(`Unknown temp_labels "${String(tempLabels)}" (supported: ${TEMP_LABELS.join(", ")})`);
@@ -158,6 +182,9 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   return {
     title: config.title ?? null,
     language: config.language?.trim() || null,
+    source,
+    entryId: config.entry_id?.trim() || null,
+    refreshInterval,
     prefix: config.mqtt_prefix ?? DEFAULTS.prefix,
     circuit: config.circuit ?? DEFAULTS.circuit,
     topicTemplate: config.topic_template ?? DEFAULTS.topicTemplate,

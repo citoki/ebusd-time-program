@@ -41,6 +41,27 @@ type: custom:ebusd-time-program-card
 | `verify_timeout` | Seconds to wait per day for the controller to confirm a write | `30` |
 | `setback_entity` | Entity with the set-back temperature of zone 1, shown and changed in the ⓘ dialog (a `number` or `input_number` can be changed, a custom `sensor` is only shown). Other zones: per program | `sensor.` or `number.{prefix}_{circuit}_z1setbacktemp`, else `…_z1nighttemp` |
 
+## Source
+
+By default the card reads ebusd's MQTT sensors and writes with `mqtt.publish`. Alternatively it can use the
+[Vaillant eBUS](https://github.com/MarkBovee/vaillant-ebus) integration, which talks to ebusd over TCP without MQTT.
+It needs a version with the `vaillant_ebus.read_time_program` and `vaillant_ebus.write_time_program` actions.
+
+| Option | Description | Default |
+|---|---|---|
+| `source` | `mqtt`, or `vaillant_ebus` for the Vaillant eBUS integration | `mqtt` |
+| `refresh_interval` | `vaillant_ebus`: seconds between reads of the programs (from ebusd's cache). `0`: only when the dashboard opens and after a write | `300` |
+| `entry_id` | `vaillant_ebus`: config entry of the integration, only needed when several are set up | |
+
+With `vaillant_ebus`, the MQTT options below are not used. The set-back temperature of a zone needs
+`setback_entity` (e.g. the integration's `number` entity).
+
+```yaml
+type: custom:ebusd-time-program-card
+source: vaillant_ebus
+programs: [z1, hwc, cc]
+```
+
 ## ebusd
 
 See [ebusd & entities](ebusd.md#different-names) for how entity ids and topics are built.

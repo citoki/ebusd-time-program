@@ -9,6 +9,11 @@ import { normalizeSlots, sameSlots } from "./model/week.js";
  * day in order, then a read-back that must show the written values before the
  * next day starts. The controller ACKs partial or rejected writes without
  * applying them, so the read-back is the only real confirmation.
+ *
+ * Two ways to write a day:
+ * - MQTT (`publish`): the card sends each slot and waits until HA's sensors show the day,
+ * - an action (`writeDay`, source `vaillant_ebus`): the integration writes the day,
+ *   reads it back and returns what the controller stored.
  */
 
 export type DayState = "queued" | "writing" | "verifying" | "done" | "failed" | "skipped";
@@ -19,7 +24,8 @@ export type FailReason =
   | { code: "count"; actual: number; expected: number }
   | { code: "slot"; index: number; actual: string; expected: string }
   | { code: "timeout" }
-  | { code: "publish"; message: string };
+  | { code: "publish"; message: string }
+  | { code: "service"; message: string };
 
 export interface JobItem {
   day: Day;
@@ -41,7 +47,13 @@ export interface JobSnapshot {
 }
 
 export interface JobDeps {
+  /** MQTT: send one message. */
   publish(topic: string, payload: string): Promise<void>;
+  /**
+   * When set, used instead of `publish`: write a whole day and resolve with the slots
+   * the controller stored (already read back), or reject.
+   */
+  writeDay?: ((day: Day, slots: Slot[]) => Promise<Slot[]>) | undefined;
   /** Current controller values of one day as HA shows them (null = unknown). */
   readDay(day: Day): Slot[] | null;
   /** Resolves on the next hass update, or after `ms` at the latest. */
@@ -104,6 +116,7 @@ export class WriteJob {
   }
 
   private async writeDay(i: number): Promise<boolean> {
+    if (this.deps.writeDay) return this.writeDayDirect(i, this.deps.writeDay);
     const { cfg, spec } = this.opts;
     const item = this.state.items[i]!;
     this.setItem(i, { state: "writing" });
@@ -141,6 +154,25 @@ export class WriteJob {
     }
   }
 
+  /** Write one day through an action that also reads it back. */
+  private async writeDayDirect(i: number, write: NonNullable<JobDeps["writeDay"]>): Promise<boolean> {
+    const item = this.state.items[i]!;
+    this.setItem(i, { state: "writing" });
+    let stored: Slot[];
+    try {
+      stored = await write(item.day, item.slots);
+    } catch (e) {
+      this.setItem(i, { state: "failed", reason: { code: "service", message: errorMessage(e) } });
+      return false;
+    }
+    if (sameSlots(stored, item.slots, this.opts.spec)) {
+      this.setItem(i, { state: "done" });
+      return true;
+    }
+    this.setItem(i, { state: "failed", reason: mismatch(stored, item.slots) });
+    return false;
+  }
+
   /** `…/get ?1` for the count message and every slot that must be read. */
   private async requestRead(item: JobItem): Promise<void> {
     const { cfg, spec, countMessage } = this.opts;
@@ -165,6 +197,13 @@ export class WriteJob {
     this.onChange(this.state);
     return this.state;
   }
+}
+
+/** Text of an error; HA rejects service calls with `{ code, message }` objects. */
+export function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
+  return String(e);
 }
 
 const range = (s: Slot) => `${s.start}–${s.end}${s.temp !== undefined ? ` ${formatTemp(s.temp)} °C` : ""}`;

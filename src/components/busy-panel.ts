@@ -35,6 +35,8 @@ export function reasonText(reason: FailReason | undefined, timeoutS: number): st
       return UI.reason.timeout(timeoutS);
     case "publish":
       return UI.reason.publish(reason.message);
+    case "service":
+      return UI.reason.service(reason.message);
   }
 }
 
