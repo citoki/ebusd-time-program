@@ -34,26 +34,44 @@ Before installing, make sure you have:
 
 [ebusd configuration](ebusd-config.md){ .md-button }
 
+[![Open eBUSd Time Program Card in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=citoki&repository=ebusd-time-program&category=plugin)
+
+The card is in the default catalog, so you can simply search for it. The button above opens it directly in your
+Home Assistant.
+
 === "Marketplace (2026.11+)"
 
-    Since Home Assistant 2026.11, HACS is built in as the **Marketplace**. Until the card is listed in the
-    catalog, add it from its link:
+    Since Home Assistant 2026.11, HACS is built in as the **Marketplace**.
 
-    1. Go to **Settings :material-arrow-right: Marketplace :material-arrow-right: Add from link**
-       (custom repositories need a one-time GitHub sign-in)
-    2. Enter `https://github.com/citoki/ebusd-time-program` (type **Dashboard**, if asked)
-    3. **Download** the card
-    4. Reload the browser
+    1. Go to **Settings :material-arrow-right: Marketplace**
+    2. Search for **eBUSd Time Program Card** and **download** it
+    3. Reload the browser
 
     The Marketplace adds the dashboard resource and offers updates for new releases.
 
+    ??? note "Not found? Add it from its link"
+
+        If the search doesn't find the card yet, add it as a custom repository:
+
+        1. Go to **Settings :material-arrow-right: Marketplace :material-arrow-right: Add from link**
+           (custom repositories need a one-time GitHub sign-in)
+        2. Enter `https://github.com/citoki/ebusd-time-program` (type **Dashboard**, if asked)
+        3. **Download** the card and reload the browser
+
 === "HACS (before 2026.11)"
 
-    1. Go to **HACS :material-arrow-right: ⋮ :material-arrow-right: Custom repositories**
-       ([HACS custom repositories docs](https://hacs.xyz/docs/faq/custom_repositories/))
-    2. Add the repository URL `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
-    3. Search for **eBUSd Time Program Card** and **download** it
-    4. Reload the browser
+    1. Open **HACS**
+    2. Search for **eBUSd Time Program Card** and **download** it
+    3. Reload the browser
+
+    ??? note "Not found? Add it as a custom repository"
+
+        If the search doesn't find the card yet:
+
+        1. Go to **HACS :material-arrow-right: ⋮ :material-arrow-right: Custom repositories**
+           ([HACS custom repositories docs](https://hacs.xyz/docs/faq/custom_repositories/))
+        2. Add the repository URL `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
+        3. Search for **eBUSd Time Program Card**, **download** it and reload the browser
 
 === "Manual"
 
