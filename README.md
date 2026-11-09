@@ -54,18 +54,15 @@ Programs used on this system: zone 1, hot water and circulation. Zones 2 and 3 u
 system yet. Running it on other hardware? Please
 [open an issue](https://github.com/citoki/ebusd-time-program/issues) and tell us whether it works.
 
-## Installation (Marketplace, Home Assistant 2026.11+)
+## Installation (Marketplace / HACS)
 
-Until the card is listed in the catalog, add it from its link:
+[![Open eBUSd Time Program Card in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=citoki&repository=ebusd-time-program&category=plugin)
 
-1. **Settings → Marketplace → Add from link** (needs a one-time GitHub sign-in)
-2. Enter `https://github.com/citoki/ebusd-time-program` (type **Dashboard**, if asked)
-3. **Download** the card and reload the browser
+The card is in the default catalog, no repository needs to be added.
 
-## Installation (HACS, before 2026.11)
-
-1. **HACS → ⋮ → Custom repositories**, add `https://github.com/citoki/ebusd-time-program` with type **Dashboard**
-2. Search for **eBUSd Time Program Card**, **download** it and reload the browser
+1. Open the **Marketplace** (Home Assistant 2026.11+, **Settings → Marketplace**) or **HACS** (before 2026.11) and
+   search for **eBUSd Time Program Card**, or use the button above to open it directly
+2. **Download** the card and reload the browser
 
 ## Installation (manual)
 
