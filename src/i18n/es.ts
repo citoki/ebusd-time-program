@@ -28,6 +28,7 @@ export const es: Strings = {
   days: "Días",
   quickSelect: "Selección rápida",
   schedule: "Programa actual",
+  preview: "Vista previa",
   now: "Ahora",
   start: "Inicio",
   end: "Fin",

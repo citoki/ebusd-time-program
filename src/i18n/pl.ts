@@ -36,6 +36,7 @@ export const pl: Strings = {
   days: "Dni",
   quickSelect: "Szybki wybór",
   schedule: "Aktualny program",
+  preview: "Podgląd",
   now: "Teraz",
   start: "Początek",
   end: "Koniec",

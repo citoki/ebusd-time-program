@@ -27,6 +27,7 @@ export const de: Strings = {
   days: "Tage",
   quickSelect: "Schnellauswahl",
   schedule: "Aktuelles Programm",
+  preview: "Vorschau",
   now: "Jetzt",
   start: "Beginn",
   end: "Ende",

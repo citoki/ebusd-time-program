@@ -28,6 +28,7 @@ export const fr: Strings = {
   days: "Jours",
   quickSelect: "Sélection rapide",
   schedule: "Programme actuel",
+  preview: "Aperçu",
   now: "Maintenant",
   start: "Début",
   end: "Fin",

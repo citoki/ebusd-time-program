@@ -28,6 +28,7 @@ export const nl: Strings = {
   days: "Dagen",
   quickSelect: "Snelkeuze",
   schedule: "Huidig programma",
+  preview: "Voorbeeld",
   now: "Nu",
   start: "Begin",
   end: "Einde",

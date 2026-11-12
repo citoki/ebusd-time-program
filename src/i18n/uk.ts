@@ -36,6 +36,7 @@ export const uk: Strings = {
   days: "Дні",
   quickSelect: "Швидкий вибір",
   schedule: "Поточна програма",
+  preview: "Перегляд",
   now: "Зараз",
   start: "Початок",
   end: "Кінець",

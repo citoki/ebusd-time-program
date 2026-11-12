@@ -29,6 +29,7 @@ export const hu: Strings = {
   days: "Napok",
   quickSelect: "Gyorsválasztás",
   schedule: "Jelenlegi program",
+  preview: "Előnézet",
   now: "Most",
   start: "Kezdés",
   end: "Vége",

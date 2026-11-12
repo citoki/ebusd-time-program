@@ -28,6 +28,7 @@ export const el: Strings = {
   days: "Ημέρες",
   quickSelect: "Γρήγορη επιλογή",
   schedule: "Τρέχον πρόγραμμα",
+  preview: "Προεπισκόπηση",
   now: "Τώρα",
   start: "Έναρξη",
   end: "Λήξη",

@@ -42,7 +42,7 @@ The card checks the slots while you type:
 | Zone below 15 °C | Warning, in case it was a typo |
 | Two slots touch and have the same temperature | Hint that they could be merged |
 
-The "Current schedule" chart shows the result immediately, with the selected days highlighted and a line for the current time.
+The "Current schedule" chart (titled "Preview" while there are unsaved changes) shows the result immediately, with the selected days highlighted and a line for the current time.
 
 ## Apply
 

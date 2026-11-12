@@ -28,6 +28,7 @@ export const sv: Strings = {
   days: "Dagar",
   quickSelect: "Snabbval",
   schedule: "Aktuellt schema",
+  preview: "Förhandsvisning",
   now: "Nu",
   start: "Start",
   end: "Slut",

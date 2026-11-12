@@ -33,6 +33,7 @@ export const en = {
   days: "Days",
   quickSelect: "Quick select",
   schedule: "Current schedule",
+  preview: "Preview",
   now: "Now",
   start: "Start",
   end: "End",

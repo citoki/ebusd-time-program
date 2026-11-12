@@ -626,6 +626,9 @@ export class EbusdTimeProgramCard extends LitElement {
                 days: previewDays,
                 selected,
                 pending: dirty ? plan.write : [],
+                saved: ctx.days,
+                // with unsaved changes the chart shows the draft, i.e. a preview
+                heading: dirty ? UI.preview : UI.schedule,
                 onDay: this._onPreviewDay,
                 now: this._nowMarker(),
               })}

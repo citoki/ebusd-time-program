@@ -15,6 +15,8 @@ export interface WeekPreviewProps {
   selected: readonly Day[];
   /** Days shown with the unsaved draft instead of the controller values. */
   pending?: readonly Day[];
+  /** Controller values: on pending days drawn faded below the draft, and draft slots that differ are tinted. */
+  saved?: Record<Day, Slot[] | null>;
   onDay: (day: Day) => void;
   /** Heading above the chart; default "Current schedule". */
   heading?: string | TemplateResult;
@@ -69,7 +71,15 @@ export function renderWeekPreview(p: WeekPreviewProps): TemplateResult {
             @click=${interactive && p.detail !== undefined ? () => onDay(d) : nothing}
             @mouseenter=${hover ? () => hover(d) : nothing}
           >
-            ${(slots ?? []).map((s) => renderSegment(s, spec, p.labels ?? false))}
+            ${isPending ? (p.saved?.[d] ?? []).map((s) => renderSegment(s, spec, false, "saved")) : nothing}
+            ${(slots ?? []).map((s) =>
+              renderSegment(
+                s,
+                spec,
+                p.labels ?? false,
+                isPending && p.saved?.[d] && !p.saved[d]!.some((b) => sameSlot(s, b)) ? "changed" : "",
+              ),
+            )}
             ${isToday ? html`<span class="now" style="left:${(p.now!.minutes / MINUTES_PER_DAY) * 100}%" title=${UI.now}></span>` : nothing}
           </div>`;
       })}
@@ -86,7 +96,10 @@ export function renderWeekPreview(p: WeekPreviewProps): TemplateResult {
   </div>`;
 }
 
-function renderSegment(slot: Slot, spec: ProgramSpec, labels: boolean): TemplateResult {
+const sameSlot = (a: Slot, b: Slot) => a.start === b.start && a.end === b.end && a.temp === b.temp;
+
+/** `kind`: "saved" = controller value under a draft (faded), "changed" = draft slot not saved yet. */
+function renderSegment(slot: Slot, spec: ProgramSpec, labels: boolean, kind: "" | "saved" | "changed" = ""): TemplateResult {
   const start = toMinutes(slot.start) ?? 0;
   const end = toMinutes(slot.end) ?? start;
   const left = (start / MINUTES_PER_DAY) * 100;
@@ -94,7 +107,7 @@ function renderSegment(slot: Slot, spec: ProgramSpec, labels: boolean): Template
   const width = Math.max(((end - start) / MINUTES_PER_DAY) * 100, 0.8);
   const label = `${slot.start}–${slot.end}${slot.temp !== undefined && spec.temp ? ` · ${formatTemp(slot.temp)} °C` : ""}`;
   const text = labels && spec.temp && slot.temp !== undefined && end - start >= LABEL_MIN_MINUTES ? shortTemp(slot.temp) : "";
-  return html`<span class="seg ${spec.temp ? "heat" : ""}" style="left:${left}%;width:${width}%" title=${label}
+  return html`<span class="seg ${spec.temp ? "heat" : ""} ${kind}" style="left:${left}%;width:${width}%" title=${label}
     >${text}</span
   >`;
 }

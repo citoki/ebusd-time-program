@@ -28,6 +28,7 @@ export const da: Strings = {
   days: "Dage",
   quickSelect: "Hurtigvalg",
   schedule: "Aktuelt program",
+  preview: "Forhåndsvisning",
   now: "Nu",
   start: "Start",
   end: "Slut",
