@@ -35,6 +35,7 @@ export const uk: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Дні",
   quickSelect: "Швидкий вибір",
+  schedule: "Поточна програма",
   preview: "Перегляд",
   now: "Зараз",
   start: "Початок",

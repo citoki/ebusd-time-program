@@ -27,6 +27,7 @@ export const sv: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Dagar",
   quickSelect: "Snabbval",
+  schedule: "Aktuellt schema",
   preview: "Förhandsvisning",
   now: "Nu",
   start: "Start",

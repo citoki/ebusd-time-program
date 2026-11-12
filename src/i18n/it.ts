@@ -27,6 +27,7 @@ export const it: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Giorni",
   quickSelect: "Selezione rapida",
+  schedule: "Programma attuale",
   preview: "Anteprima",
   now: "Adesso",
   start: "Inizio",

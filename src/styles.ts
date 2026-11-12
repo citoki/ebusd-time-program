@@ -855,6 +855,13 @@ export const cardStyles = css`
   .seg.heat {
     background: var(--etp-heat);
   }
+  /* pending day: the saved slots faded underneath, new / changed draft slots a bit more yellow */
+  .seg.saved {
+    opacity: 0.3;
+  }
+  .seg.changed {
+    background: color-mix(in srgb, var(--etp-heat) 55%, #ffd23f);
+  }
   /* temperature written inside long segments (preview mode) */
   .week.labelled .track {
     height: 18px;
@@ -889,7 +896,7 @@ export const cardStyles = css`
     color: var(--etp-accent);
   }
   /* preview mode: a click or hover on a row writes its slots out */
-  .preview-mode .track {
+  .preview-mode .week:not(.static) .track {
     cursor: pointer;
   }
   .detail {

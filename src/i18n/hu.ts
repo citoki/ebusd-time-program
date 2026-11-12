@@ -28,6 +28,7 @@ export const hu: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Napok",
   quickSelect: "Gyorsválasztás",
+  schedule: "Jelenlegi program",
   preview: "Előnézet",
   now: "Most",
   start: "Kezdés",

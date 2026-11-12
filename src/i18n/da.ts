@@ -27,6 +27,7 @@ export const da: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Dage",
   quickSelect: "Hurtigvalg",
+  schedule: "Aktuelt program",
   preview: "Forhåndsvisning",
   now: "Nu",
   start: "Start",
