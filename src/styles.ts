@@ -889,7 +889,7 @@ export const cardStyles = css`
     color: var(--etp-accent);
   }
   /* preview mode: a click or hover on a row writes its slots out */
-  .preview-mode .track {
+  .preview-mode .week:not(.static) .track {
     cursor: pointer;
   }
   .detail {

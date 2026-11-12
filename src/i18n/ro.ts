@@ -28,7 +28,7 @@ export const ro: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Zile",
   quickSelect: "Selecție rapidă",
-  preview: "Previzualizare",
+  schedule: "Programul actual",
   now: "Acum",
   start: "Început",
   end: "Sfârșit",

@@ -550,7 +550,9 @@ export class EbusdTimeProgramCard extends LitElement {
       spec,
       days,
       rows,
-      selected: [day],
+      // without the detail line there is nothing to pick: no highlight, no click / hover
+      selected: cfg.previewLabel ? [day] : [],
+      interactive: cfg.previewLabel,
       onDay: (d) => (this._detail = d),
       onHover: (d) => (this._hover = d),
       heading: uniform === null ? name : `${name} · ${formatTemp(uniform)} °C`,

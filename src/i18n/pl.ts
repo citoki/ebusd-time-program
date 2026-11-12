@@ -35,7 +35,7 @@ export const pl: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Dni",
   quickSelect: "Szybki wybór",
-  preview: "Podgląd",
+  schedule: "Aktualny program",
   now: "Teraz",
   start: "Początek",
   end: "Koniec",

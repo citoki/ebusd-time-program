@@ -32,7 +32,7 @@ export const en = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Days",
   quickSelect: "Quick select",
-  preview: "Preview",
+  schedule: "Current schedule",
   now: "Now",
   start: "Start",
   end: "End",

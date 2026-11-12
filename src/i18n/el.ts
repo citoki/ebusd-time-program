@@ -27,7 +27,7 @@ export const el: Strings = {
   } as Record<IssueCode, (p: Params) => string>,
   days: "Ημέρες",
   quickSelect: "Γρήγορη επιλογή",
-  preview: "Προεπισκόπηση",
+  schedule: "Τρέχον πρόγραμμα",
   now: "Τώρα",
   start: "Έναρξη",
   end: "Λήξη",
