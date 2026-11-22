@@ -95,6 +95,10 @@ export const el: Strings = {
   save: "Αποθήκευση",
   saveFailed: (message: string) => `Η αποθήκευση απέτυχε: ${message}`,
   setbackReadOnly: "Ρυθμίζεται στον ελεγκτή.",
+  sharedTempTitle: "Θερμοκρασία ζεστού νερού",
+  sharedTempNote: "Για όλα τα χρονικά διαστήματα και τις ημέρες",
+  sharedTempHelp:
+    "Ο ελεγκτής έχει μία θερμοκρασία ζεστού νερού για όλα τα χρονικά διαστήματα κάθε ημέρας. Η αποθήκευση την αλλάζει αμέσως για όλη την εβδομάδα.",
   change: "Αλλαγή:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} χωρίς αλλαγές`,

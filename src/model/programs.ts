@@ -28,6 +28,7 @@ export const PROGRAMS: Record<ProgramId, ProgramSpec> = {
     messagePrefix: "HwcTimer",
     temp: { min: 35, max: 70, step: 0.5 },
     defaultTemp: 50,
+    sharedTempMessages: ["HwcTempDesired"],
   },
   cc: {
     id: "cc",

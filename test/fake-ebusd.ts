@@ -9,7 +9,9 @@ import { DAYS, type Day, type ProgramSpec, type Slot } from "../src/model/types.
  * Simulates ebusd + VRC 720 behind HA's `mqtt.publish`, with the behaviour
  * verified on a real VRC 720:
  * - a day is applied only when slots 0…count-1 arrive in order (partial writes are ignored),
- * - written values reach HA only after a `/get` of the count and slot messages.
+ * - written values reach HA only after a `/get` of the count and slot messages,
+ * - HWC has one temperature (HwcTempDesired) for all slots of all days: a slot written
+ *   with a number changes it everywhere, `-` keeps it (ctlv2 and BASS3, issue #7).
  */
 export interface FakeOptions {
   /** Delay per bus operation in ms (real bus: ~1000). */
@@ -112,7 +114,7 @@ export class FakeEbusd {
         return slot;
       });
       await sleep((this.opts.delay ?? 0) * (Math.max(slots.length, 1) + 4)); // slot writes + read-back
-      if (!this.opts.ignoreWrites?.has(writeMessage(spec, day))) this.controller.set(key(spec, day), slots);
+      if (!this.opts.ignoreWrites?.has(writeMessage(spec, day))) this.store(spec, day, slots);
       const stored = this.controllerDay(spec, day);
       if (JSON.stringify(stored) !== JSON.stringify(slots)) {
         const done = Object.keys(written).join(", ") || "none";
@@ -144,8 +146,10 @@ export class FakeEbusd {
   }
 
   private onSet(message: string, payload: string): void {
-    if (Object.values(PROGRAMS).some((spec) => spec.setbackMessages?.includes(message))) {
-      // single value (set-back temperature): ebusd writes it and publishes the new value
+    const shared = Object.values(PROGRAMS).find((spec) => spec.sharedTempMessages?.includes(message));
+    if (shared) this.setSharedTemp(shared, Number(payload));
+    if (shared || Object.values(PROGRAMS).some((spec) => spec.setbackMessages?.includes(message))) {
+      // single value (set-back / HWC temperature): ebusd writes it and publishes the new value
       const id = entityId(this.cfg, message, "").replace(/_+$/, "");
       const old = this.states[id];
       if (old) {
@@ -163,7 +167,7 @@ export class FakeEbusd {
     const k = key(spec, day);
     if (n === 0) {
       this.pending.delete(k);
-      if (!this.opts.ignoreWrites?.has(message)) this.controller.set(k, []);
+      if (!this.opts.ignoreWrites?.has(message)) this.store(spec, day, []);
       return;
     }
     const slot: Slot = { start: start!, end: end! };
@@ -178,7 +182,32 @@ export class FakeEbusd {
     const done = this.pending.get(k)!;
     if (done.slots.length === done.count) {
       this.pending.delete(k);
-      if (!this.opts.ignoreWrites?.has(message)) this.controller.set(k, done.slots);
+      if (!this.opts.ignoreWrites?.has(message)) this.store(spec, day, done.slots);
+    }
+  }
+
+  /** Apply a written day. Shared temperature: a number becomes the one of every slot, `-` (NaN) keeps it. */
+  private store(spec: ProgramSpec, day: Day, slots: Slot[]): void {
+    if (!spec.sharedTempMessages) {
+      this.controller.set(key(spec, day), slots);
+      return;
+    }
+    this.controller.set(key(spec, day), slots.map(({ start, end }) => ({ start, end })));
+    const written = slots.map((s) => s.temp).filter((t): t is number => t !== undefined && Number.isFinite(t));
+    this.setSharedTemp(spec, written.at(-1) ?? this.sharedTemp(spec));
+  }
+
+  /** The shared temperature as the controller has it (HwcTempDesired). */
+  sharedTemp(spec: ProgramSpec): number | undefined {
+    return DAYS.flatMap((d) => this.controllerDay(spec, d)).find((s) => s.temp !== undefined)?.temp ?? this.hwcTemp;
+  }
+  private hwcTemp: number | undefined;
+
+  private setSharedTemp(spec: ProgramSpec, temp: number | undefined): void {
+    if (temp === undefined || !Number.isFinite(temp)) return;
+    this.hwcTemp = temp;
+    for (const d of DAYS) {
+      this.controller.set(key(spec, d), this.controllerDay(spec, d).map(({ start, end }) => ({ start, end, temp })));
     }
   }
 

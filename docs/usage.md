@@ -21,17 +21,21 @@ Each day has up to **3 slots**. Times are set in 10-minute steps, `24:00` is all
 and keeps such times; changing one moves it to the next 10-minute step.
 
 - **Tap a time** to change it: hours and minutes with arrows, or ±10 minutes. The keyboard works too.
-- **Tap a temperature** (zones and hot water) to change it in steps of 0.5 °C.
+- **Tap a temperature** (zones) to change it in steps of 0.5 °C.
+- **Hot water** has only one temperature for all slots and all days (`HwcTempDesired`): the controller does
+  not store one per slot. It is shown once above the slots (**Hot water temperature · for all slots and
+  days**); tap it to change it, **Save** writes it to the controller right away. Writing the time slots
+  leaves it as it is.
 - **Add time slot** adds a one-hour slot an hour after the last one (or in the first free gap), with the
   temperature of the last slot. The number in brackets is how many slots are left.
 - The bin deletes a slot.
 - **ⓘ** explains what happens outside the slots. For a zone it opens a dialog where you can change the
   set-back temperature it heats to outside the slots; **Save** writes it to the controller right away.
 
-| Program | Temperature per slot | Outside the slots |
+| Program | Temperature | Outside the slots |
 |---|---|---|
-| Zones | 5–30 °C | heats to the set-back temperature |
-| Hot water | 35–70 °C | water is not reheated |
+| Zones | 5–30 °C per slot | heats to the set-back temperature |
+| Hot water | 35–70 °C, one for all slots and days | water is not reheated |
 | Circulation | – | pump is off |
 
 The card checks the slots while you type:

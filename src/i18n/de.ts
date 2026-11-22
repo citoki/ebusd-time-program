@@ -94,6 +94,10 @@ export const de: Strings = {
   save: "Speichern",
   saveFailed: (message: string) => `Speichern fehlgeschlagen: ${message}`,
   setbackReadOnly: "Am Regler einstellen.",
+  sharedTempTitle: "Warmwassertemperatur",
+  sharedTempNote: "Für alle Zeitfenster und Tage",
+  sharedTempHelp:
+    "Der Regler hat eine Warmwassertemperatur für alle Zeitfenster an allen Tagen. Speichern ändert sie sofort für die ganze Woche.",
   change: "Ändern:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} unverändert`,

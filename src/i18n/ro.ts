@@ -96,6 +96,10 @@ export const ro: Strings = {
   save: "Salvează",
   saveFailed: (message: string) => `Salvarea a eșuat: ${message}`,
   setbackReadOnly: "Se setează pe regulator.",
+  sharedTempTitle: "Temperatura apei calde",
+  sharedTempNote: "Pentru toate intervalele și zilele",
+  sharedTempHelp:
+    "Regulatorul are o singură temperatură a apei calde pentru toate intervalele din toate zilele. Salvarea o schimbă imediat pentru toată săptămâna.",
   change: "Modificare:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} neschimbat(e)`,

@@ -60,17 +60,23 @@ describe("validateDay – errors", () => {
     const slots = ["01", "03", "05", "07"].map((h) => ({ start: `${h}:00`, end: `${h}:30` }));
     expect(codes(validateDay(slots, cc))).toEqual(["too_many_slots"]);
   });
-  it("missing temperature for Z1 / HWC", () => {
+  it("missing temperature for Z1", () => {
     expect(codes(validateDay([{ start: "06:00", end: "07:00" }], z1))).toEqual(["temp_missing"]);
-    expect(codes(validateDay([{ start: "06:00", end: "07:00", temp: Number.NaN }], hwc))).toEqual([
-      "temp_missing",
-    ]);
+  });
+  it("HWC: slot temperatures are not checked, the program has one shared temperature (issue #7)", () => {
+    expect(validateDay([{ start: "06:00", end: "07:00" }], hwc)).toEqual([]);
+    expect(validateDay([{ start: "06:00", end: "07:00", temp: Number.NaN }], hwc)).toEqual([]);
+    expect(validateDay([{ start: "06:00", end: "07:00", temp: 80 }], hwc)).toEqual([]);
+    // touching slots can always be merged, whatever the slots mirror
+    const touching = [
+      { start: "06:00", end: "07:00", temp: 50 },
+      { start: "07:00", end: "08:00", temp: 55 },
+    ];
+    expect(codes(validateDay(touching, hwc))).toEqual(["mergeable"]);
   });
   it.each([
     [z1, 4.5],
     [z1, 30.5],
-    [hwc, 34.5],
-    [hwc, 70.5],
   ])("temperature out of range (%#)", (spec, temp) => {
     const issues = validateDay([{ start: "06:00", end: "07:00", temp }], spec);
     expect(codes(issues)).toEqual(["temp_range"]);

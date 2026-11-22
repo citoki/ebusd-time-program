@@ -64,14 +64,21 @@ export function normalizeSlots(slots: readonly Slot[], spec: ProgramSpec): Slot[
     .sort((a, b) => (toMinutes(a.start) ?? 0) - (toMinutes(b.start) ?? 0));
 }
 
+/**
+ * True when slots carry their own temperature. With a shared temperature (HWC) the
+ * slots only mirror it, so comparing and verifying looks at the times only.
+ */
+export const perSlotTemp = (spec: ProgramSpec): boolean => spec.temp !== null && !spec.sharedTempMessages;
+
 export function sameSlots(a: readonly Slot[], b: readonly Slot[], spec: ProgramSpec): boolean {
   const na = normalizeSlots(a, spec);
   const nb = normalizeSlots(b, spec);
+  const temps = perSlotTemp(spec);
   return (
     na.length === nb.length &&
     na.every((s, i) => {
       const o = nb[i]!;
-      return s.start === o.start && s.end === o.end && s.temp === o.temp;
+      return s.start === o.start && s.end === o.end && (!temps || s.temp === o.temp);
     })
   );
 }

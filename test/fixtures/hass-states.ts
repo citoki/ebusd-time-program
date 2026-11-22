@@ -41,6 +41,8 @@ export const SAMPLE_WEEKS: Partial<Record<ProgramId, Week>> = {
 export const SAMPLE_Z2: Week = week([{ start: "17:00", end: "21:00", temp: 20 }], [{ start: "09:00", end: "21:00", temp: 20 }]);
 
 export const SAMPLE_SETBACK = "17.0";
+/** HwcTempDesired: the one temperature of all HWC slots (the sample slots mirror it). */
+export const SAMPLE_HWC_TEMP = "50.0";
 
 const UPDATED = "2026-01-01T12:00:00+00:00";
 
@@ -55,6 +57,7 @@ export function sampleStates(weeks: Partial<Record<ProgramId, Week>> = SAMPLE_WE
     const days = weeks[spec.id];
     if (!days) continue;
     if (spec.setbackMessages) set(entityId(cfg, spec.setbackMessages[0]!, "").replace(/_+$/, ""), SAMPLE_SETBACK);
+    if (spec.sharedTempMessages) set(entityId(cfg, spec.sharedTempMessages[0]!, "").replace(/_+$/, ""), SAMPLE_HWC_TEMP);
     DAYS.forEach((day, i) => {
       set(entityId(cfg, `${spec.messagePrefix}_Timeframes`, countField(i)), String(days[day].length));
       // ebusd reads unused slots as 00:00–00:00 without a temperature

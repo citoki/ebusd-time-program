@@ -103,6 +103,10 @@ export const uk: Strings = {
   save: "Зберегти",
   saveFailed: (message: string) => `Не вдалося зберегти: ${message}`,
   setbackReadOnly: "Налаштовується на регуляторі.",
+  sharedTempTitle: "Температура гарячої води",
+  sharedTempNote: "Для всіх інтервалів і днів",
+  sharedTempHelp:
+    "Регулятор має одну температуру гарячої води для всіх інтервалів у всі дні. Збереження одразу змінює її на весь тиждень.",
   change: "Зміна:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} без змін`,

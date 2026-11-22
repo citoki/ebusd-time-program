@@ -95,6 +95,10 @@ export const fr: Strings = {
   save: "Enregistrer",
   saveFailed: (message: string) => `Échec de l’enregistrement : ${message}`,
   setbackReadOnly: "À régler sur le régulateur.",
+  sharedTempTitle: "Température de l’eau chaude",
+  sharedTempNote: "Pour toutes les plages et tous les jours",
+  sharedTempHelp:
+    "Le régulateur n’a qu’une température d’eau chaude pour toutes les plages de tous les jours. L’enregistrer la modifie immédiatement pour toute la semaine.",
   change: "Modifier :",
   dayCount: days,
   unchangedDays: (d: string) => `${d} inchangé(s)`,

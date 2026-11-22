@@ -56,7 +56,7 @@ integration that provides `read_time_program` and `write_time_program` actions:
 | `entry_id` | Service sources: config entry of the integration, only needed when several are set up | |
 
 With `vaillant_ebus` or `arotherm_genia_ebusd`, the MQTT options below are not used. The set-back temperature of a zone
-needs `setback_entity` (e.g. the integration's `number` entity).
+needs `setback_entity`, the hot-water temperature `temp_entity` (e.g. the integration's `number` entities).
 
 ```yaml
 type: custom:ebusd-time-program-card
@@ -100,6 +100,7 @@ An entry is either the id or an object with these keys:
 | `name` | Own name for tab and heading, e.g. `Ground floor`. Without it the tab shows the short form (`Z1`, `HWC`, `CC`) and the heading the full name in the card's language |
 | `message_prefix` | ebusd message prefix if your CSV names it differently, e.g. `Z2Timer` |
 | `setback_entity` | Zones: entity with the set-back temperature |
+| `temp_entity` | Hot water: entity with the one temperature of all slots (`number`/`input_number` can be changed, a `sensor` is only shown). Default: `sensor.` or `number.{prefix}_{circuit}_hwctempdesired` |
 
 ```yaml
 programs:

@@ -50,6 +50,20 @@ describe("slot conversion", () => {
     expect(toService([{ start: "06:00", end: "08:00", temp: 21 }], z1)).toEqual([{ start: "06:00", end: "08:00", temperature: 21 }]);
     expect(toService([{ start: "06:00", end: "08:00", temp: 21 }], cc)).toEqual([{ start: "06:00", end: "08:00" }]);
   });
+  it("HWC: never the slots' own temperature, only the current shared one (issue #7)", () => {
+    const slots = [
+      { start: "06:00", end: "08:00", temp: 50 },
+      { start: "18:00", end: "19:00", temp: 60 },
+    ];
+    expect(toService(slots, PROGRAMS.hwc)).toEqual([
+      { start: "06:00", end: "08:00" },
+      { start: "18:00", end: "19:00" },
+    ]);
+    expect(toService(slots, PROGRAMS.hwc, 52.5)).toEqual([
+      { start: "06:00", end: "08:00", temperature: 52.5 },
+      { start: "18:00", end: "19:00", temperature: 52.5 },
+    ]);
+  });
 });
 
 describe("reading", () => {

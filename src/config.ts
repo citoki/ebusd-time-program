@@ -25,6 +25,8 @@ export interface ProgramConfig {
   message_prefix?: string;
   /** Zones only: entity with the set-back temperature shown in the info text. */
   setback_entity?: string;
+  /** Hot water only: entity with the one desired temperature of all slots (default: the HwcTempDesired sensor/number). */
+  temp_entity?: string;
 }
 
 /** YAML config of the card (snake_case like other HA cards). */
@@ -85,7 +87,10 @@ export interface ResolvedProgram {
   spec: ProgramSpec;
   /** Configured name; null = the program's name in the card's language (programName()). */
   name: string | null;
-  /** Configured set-back entity; null = derive it from the entity template. */
+  /**
+   * Configured entity of the program's own temperature (zones: `setback_entity`,
+   * hot water: `temp_entity`); null = derive it from the entity template.
+   */
   setbackEntity: string | null;
 }
 
@@ -183,7 +188,9 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
       source === "arotherm_genia_ebusd" && p.id === "cc" ? "CirculationTimer" : base.messagePrefix;
     const messagePrefix = p.message_prefix ?? defaultPrefix;
     const spec = messagePrefix !== base.messagePrefix ? { ...base, messagePrefix } : base;
-    const setbackEntity = p.setback_entity ?? (p.id === "z1" ? config.setback_entity : undefined) ?? null;
+    const setbackEntity = base.sharedTempMessages
+      ? (p.temp_entity ?? null)
+      : (p.setback_entity ?? (p.id === "z1" ? config.setback_entity : undefined) ?? null);
     return { spec, name: p.name ?? null, setbackEntity };
   });
   return {
@@ -217,6 +224,11 @@ export function accentStyle(cfg: ResolvedConfig): string {
   return cfg.accent ? `--etp-accent:${cfg.accent}` : "";
 }
 
+/** ebusd messages of a program's own temperature: a zone's set-back, or the one shared by all HWC slots. */
+export function tempMessages(spec: ProgramSpec): readonly string[] {
+  return spec.setbackMessages ?? spec.sharedTempMessages ?? [];
+}
+
 /**
  * Entity of a zone's set-back temperature ("Absenktemperatur", Z1: register 0x9);
  * null for programs without one. It is a single-value sensor, so the `{field}`
@@ -225,10 +237,11 @@ export function accentStyle(cfg: ResolvedConfig): string {
  * lets writes through, so each sensor id has a `number.` twin. With `states`, the
  * first candidate that exists wins (`…_z1setbacktemp`, then `…_z1nighttemp`, each
  * sensor before number); without, or when none exists, the first candidate.
+ * Hot water uses the same lookup for its shared temperature (`…_hwctempdesired`).
  */
 export function setbackEntityId(cfg: ResolvedConfig, program: ResolvedProgram, states?: Record<string, unknown>): string | null {
   if (program.setbackEntity) return program.setbackEntity;
-  const ids = (program.spec.setbackMessages ?? []).flatMap((msg) => {
+  const ids = tempMessages(program.spec).flatMap((msg) => {
     const id = entityId(cfg, msg, "").replace(/_+$/, "");
     return id.startsWith("sensor.") ? [id, `number.${id.slice("sensor.".length)}`] : [id];
   });
@@ -251,7 +264,7 @@ export function setbackWrite(cfg: ResolvedConfig, program: ResolvedProgram, id: 
   const domain = id.slice(0, id.indexOf("."));
   if (domain === "number" || domain === "input_number") return { kind: "service", domain, entity: id };
   if (program.setbackEntity) return null;
-  const message = (program.spec.setbackMessages ?? []).find((m) => entityId(cfg, m, "").replace(/_+$/, "") === id);
+  const message = tempMessages(program.spec).find((m) => entityId(cfg, m, "").replace(/_+$/, "") === id);
   return message ? { kind: "mqtt", topic: topic(cfg, message, "set") } : null;
 }
 

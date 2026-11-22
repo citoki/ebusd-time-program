@@ -102,6 +102,10 @@ export const en = {
   save: "Save",
   saveFailed: (message: string) => `Could not save: ${message}`,
   setbackReadOnly: "Change it on the controller.",
+  sharedTempTitle: "Hot water temperature",
+  sharedTempNote: "For all slots and days",
+  sharedTempHelp:
+    "The controller has one hot-water temperature for all time slots on every day. Saving changes it right away, for the whole week.",
   // apply bar
   change: "Change:",
   dayCount: (n: number) => (n === 1 ? "1 day" : `${n} days`),

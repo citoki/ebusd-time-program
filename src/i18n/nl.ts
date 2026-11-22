@@ -95,6 +95,10 @@ export const nl: Strings = {
   save: "Opslaan",
   saveFailed: (message: string) => `Opslaan mislukt: ${message}`,
   setbackReadOnly: "In te stellen op de regelaar.",
+  sharedTempTitle: "Warmwatertemperatuur",
+  sharedTempNote: "Voor alle tijdvakken en dagen",
+  sharedTempHelp:
+    "De regelaar heeft één warmwatertemperatuur voor alle tijdvakken op alle dagen. Opslaan wijzigt die meteen voor de hele week.",
   change: "Wijzigen:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} ongewijzigd`,

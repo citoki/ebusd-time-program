@@ -103,6 +103,10 @@ export const pl: Strings = {
   save: "Zapisz",
   saveFailed: (message: string) => `Nie udało się zapisać: ${message}`,
   setbackReadOnly: "Ustaw w regulatorze.",
+  sharedTempTitle: "Temperatura ciepłej wody",
+  sharedTempNote: "Dla wszystkich przedziałów i dni",
+  sharedTempHelp:
+    "Regulator ma jedną temperaturę ciepłej wody dla wszystkich przedziałów czasowych we wszystkie dni. Zapisanie zmienia ją od razu dla całego tygodnia.",
   change: "Zmiana:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} bez zmian`,

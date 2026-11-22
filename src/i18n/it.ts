@@ -95,6 +95,10 @@ export const it: Strings = {
   save: "Salva",
   saveFailed: (message: string) => `Salvataggio non riuscito: ${message}`,
   setbackReadOnly: "Da impostare sulla centralina.",
+  sharedTempTitle: "Temperatura acqua calda",
+  sharedTempNote: "Per tutte le fasce e tutti i giorni",
+  sharedTempHelp:
+    "La centralina ha un’unica temperatura dell’acqua calda per tutte le fasce di tutti i giorni. Salvando la si cambia subito per tutta la settimana.",
   change: "Modifica:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} invariati`,

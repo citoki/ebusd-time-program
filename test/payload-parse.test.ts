@@ -48,10 +48,15 @@ describe("buildDayPayloads – temperature programs", () => {
       ]),
     ).toEqual(["0;2;06:30;11:30;25.0", "1;2;14:00;21:30;25.0"]);
   });
-  it("HWC: 0.5 step kept", () => {
-    expect(buildDayPayloads(hwc, [{ start: "11:00", end: "15:00", temp: 55.5 }])).toEqual([
-      "0;1;11:00;15:00;55.5",
-    ]);
+  it("HWC: '-' keeps the one shared temperature (issue #7), whatever the slots carry", () => {
+    expect(buildDayPayloads(hwc, [{ start: "11:00", end: "15:00", temp: 55.5 }])).toEqual(["0;1;11:00;15:00;-"]);
+    expect(
+      buildDayPayloads(hwc, [
+        { start: "15:00", end: "16:00", temp: 55 },
+        { start: "13:00", end: "14:00" },
+      ]),
+    ).toEqual(["0;2;13:00;14:00;-", "1;2;15:00;16:00;-"]);
+    expect(buildDayPayloads(hwc, [])).toEqual(["0;0;00:00;00:00;-"]);
   });
   it("off-grid temperature is rounded to the step", () => {
     expect(buildDayPayloads(z1, [{ start: "06:00", end: "07:00", temp: 21.3 }])).toEqual([
@@ -83,7 +88,7 @@ describe("buildDayPayloads – refuses invalid input", () => {
     expect(() => buildDayPayloads(cc, slots)).toThrow(InvalidDayError);
   });
   it("temperature out of range", () => {
-    expect(() => buildDayPayloads(hwc, [{ start: "06:00", end: "07:00", temp: 80 }])).toThrow(InvalidDayError);
+    expect(() => buildDayPayloads(z1, [{ start: "06:00", end: "07:00", temp: 31 }])).toThrow(InvalidDayError);
   });
 });
 

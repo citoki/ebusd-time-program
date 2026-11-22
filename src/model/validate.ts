@@ -1,6 +1,7 @@
 import { MAX_SLOTS } from "./programs.js";
 import { isOnStep, roundToStep, toMinutes } from "./time.js";
 import type { Day, ProgramSpec, Slot } from "./types.js";
+import { perSlotTemp } from "./week.js";
 
 export type IssueLevel = "error" | "warning" | "info";
 
@@ -79,7 +80,7 @@ export function validateDay(slots: readonly Slot[], spec: ProgramSpec): Issue[] 
       });
     } else if (
       cur.start === prev.end &&
-      (!spec.temp || (cur.temp !== undefined && cur.temp === prev.temp))
+      (!perSlotTemp(spec) || (cur.temp !== undefined && cur.temp === prev.temp))
     ) {
       issues.push({
         level: "info",
@@ -114,7 +115,7 @@ function checkTime(
 
 function checkTemp(slot: Slot, idx: number, spec: ProgramSpec, issues: Issue[]): void {
   const range = spec.temp;
-  if (!range) return; // CC: temperature ignored
+  if (!range || !perSlotTemp(spec)) return; // CC: no temperature; HWC: one shared, not edited per slot
   const t = slot.temp;
   if (t === undefined || !Number.isFinite(t)) {
     issues.push({ level: "error", code: "temp_missing", slot: idx, field: "temp" });

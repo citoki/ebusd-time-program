@@ -28,6 +28,11 @@ export interface SlotListProps {
   info: string;
   /** Opens the info dialog (zones: with the set-back temperature). */
   onInfo: () => void;
+  /**
+   * Programs with one temperature for all slots (HWC): shown once above the slots
+   * instead of per row. `value` null = not known yet.
+   */
+  sharedTemp?: { value: number | null; onEdit: () => void } | undefined;
 }
 
 const ICON_DELETE = svg`<path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />`;
@@ -39,17 +44,19 @@ const icon = (path: ReturnType<typeof svg>) =>
 export function renderSlotList(p: SlotListProps): TemplateResult {
   const { name, spec, summary, slots, issues } = p;
   const dayIssues = issues.filter((i) => i.slot === undefined);
+  const rowTemps = spec.temp !== null && !p.sharedTemp;
   return html`<div class="section">
     <div class="prog-head">
       <h3 class="prog-name">${name}</h3>
       <span class="prog-summary">${summary}</span>
     </div>
+    ${p.sharedTemp ? renderSharedTemp(spec, p.sharedTemp) : nothing}
     <div class="slots">
       <div class="slot-head" aria-hidden="true">
         <span>${UI.start}</span>
         <span></span>
         <span>${UI.end}</span>
-        <span class="col-temp">${spec.temp ? UI.temp : ""}</span>
+        <span class="col-temp">${rowTemps ? UI.temp : ""}</span>
         <span></span>
       </div>
       ${slots === null
@@ -62,7 +69,7 @@ export function renderSlotList(p: SlotListProps): TemplateResult {
         : html`<div role="list" aria-label=${name}>
             ${slots.length === 0
               ? html`<div class="empty" role="listitem">${UI.offAllDay}</div>`
-              : slots.map((s, i) => renderRow(p, s, i))}
+              : slots.map((s, i) => renderRow(p, s, i, rowTemps))}
           </div>`}
       ${dayIssues.map((i) => html`<p class="issue ${i.level}">${issueMessage(i)}</p>`)}
     </div>
@@ -70,14 +77,33 @@ export function renderSlotList(p: SlotListProps): TemplateResult {
   </div>`;
 }
 
-function renderRow(p: SlotListProps, slot: Slot, i: number): TemplateResult {
+/** The one temperature of all slots and days, with its own editor (saved right away, not with Apply). */
+function renderSharedTemp(spec: ProgramSpec, shared: NonNullable<SlotListProps["sharedTemp"]>): TemplateResult {
+  const text = shared.value === null ? UI.tempUnknown : `${formatTemp(shared.value)} °C`;
+  return html`<div class="shared-temp">
+    <div class="shared-temp-text">
+      <span class="shared-temp-label">${UI.sharedTempTitle}</span>
+      <span class="shared-temp-note">${UI.sharedTempNote}</span>
+    </div>
+    <button
+      class="field pill"
+      aria-haspopup="dialog"
+      aria-label="${UI.sharedTempTitle}: ${text}"
+      @click=${shared.onEdit}
+    >
+      <span class="dot ${tempBand(spec, shared.value ?? undefined) ?? ""}"></span>${text}
+    </button>
+  </div>`;
+}
+
+function renderRow(p: SlotListProps, slot: Slot, i: number, rowTemps: boolean): TemplateResult {
   const { spec } = p;
   const rowIssues = p.issues.filter((x) => x.slot === i);
   const bad = new Set(rowIssues.filter((x) => x.level === "error").map((x) => x.field));
   const invalid = rowIssues.some((x) => x.level === "error");
   const n = i + 1;
   const tempText = slot.temp === undefined ? UI.tempUnknown : `${formatTemp(slot.temp)} °C`;
-  const label = `${UI.slotN(n)}: ${slot.start}–${slot.end}${spec.temp ? `, ${tempText}` : ""}`;
+  const label = `${UI.slotN(n)}: ${slot.start}–${slot.end}${rowTemps ? `, ${tempText}` : ""}`;
   const issueId = `slot-issues-${i}`;
   const describedBy = rowIssues.length ? issueId : nothing;
 
@@ -101,7 +127,7 @@ function renderRow(p: SlotListProps, slot: Slot, i: number): TemplateResult {
     <span class="dash" aria-hidden="true">–</span>
     ${field("end", slot.end, "time")}
     <span class="col-temp">
-      ${spec.temp
+      ${rowTemps
         ? field(
             "temp",
             html`<span class="dot ${tempBand(spec, slot.temp) ?? ""}"></span>${tempText}`,

@@ -96,6 +96,10 @@ export const hu: Strings = {
   save: "Mentés",
   saveFailed: (message: string) => `Mentés sikertelen: ${message}`,
   setbackReadOnly: "A szabályozón állítható.",
+  sharedTempTitle: "Melegvíz-hőmérséklet",
+  sharedTempNote: "Minden idősávra és napra",
+  sharedTempHelp:
+    "A szabályozónak egyetlen melegvíz-hőmérséklete van minden nap összes idősávjára. A mentés azonnal az egész hétre módosítja.",
   change: "Módosítás:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} változatlan`,
