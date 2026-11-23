@@ -79,6 +79,7 @@ export const hu: Strings = {
   slotsLeft: (n: number) => `(még ${n})`,
   noGap: "Ezen a napon nincs több szabad idő",
   deleteSlot: (n: number) => `${n}. idősáv törlése`,
+  mergeSlots: (a: number, b: number) => `A(z) ${a}. és ${b}. idősáv összevonása`,
   editField: (field: Field, n: number) => `${FIELD[field]}, ${n}. idősáv`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · ${n}. idősáv`,

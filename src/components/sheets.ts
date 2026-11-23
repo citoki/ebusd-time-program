@@ -13,6 +13,8 @@ export interface SheetState {
   field: SlotField;
   /** minutes after midnight for start/end, °C for temp */
   value: number;
+  /** Temperature choice for merging slot `index` with the next one (field "temp"). */
+  merge?: true;
 }
 
 export interface SheetProps {
@@ -32,9 +34,9 @@ export function renderSheet(p: SheetProps): TemplateResult {
     p.onDone();
     closeDialog(e);
   };
-  const { field, index } = p.sheet;
+  const { field, index, merge } = p.sheet;
   return renderFrame({
-    title: html`${renderIcon(SLOT_ICON)}${UI.sheetTitle(field, index + 1)}`,
+    title: html`${renderIcon(SLOT_ICON)}${merge ? UI.mergeSlots(index + 1, index + 2) : UI.sheetTitle(field, index + 1)}`,
     body: field === "temp" ? (p.spec.temp ? renderTemp(p.spec, p.spec.temp, p.sheet.value, p.onChange) : nothing) : renderTime(p, field),
     issues: p.issues.map((i) => issueLine(i.level, issueMessage(i))),
     actions: html`<button class="btn" @click=${closeDialog}>${UI.cancel}</button>

@@ -396,6 +396,60 @@ export const cardStyles = css`
     border-bottom: 1px solid var(--etp-divider);
     font-variant-numeric: tabular-nums;
   }
+  .slot-row {
+    position: relative;
+  }
+  /* merge button: on the line between two rows, under the "–" column */
+  .merge-btn {
+    position: absolute;
+    top: 0;
+    left: calc(8px + 4.6rem + 4px + 0.6rem);
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--etp-divider);
+    border-radius: 50%;
+    background: var(--etp-surface);
+    color: var(--etp-muted);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .merge-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  /* bigger touch target than the visible circle */
+  .merge-btn::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+  }
+  .merge-btn.touching,
+  .merge-btn:focus-visible,
+  .slot-row:hover > .merge-btn,
+  .slot-row:hover + .slot-row > .merge-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .merge-btn:hover {
+    color: var(--etp-accent);
+    border-color: var(--etp-accent);
+  }
+  @media (hover: none) {
+    .merge-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .merge-btn {
+      transition: opacity 0.15s;
+    }
+  }
   .slot-row.changed {
     box-shadow: inset 3px 0 0 var(--etp-accent);
   }

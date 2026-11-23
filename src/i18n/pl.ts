@@ -86,6 +86,7 @@ export const pl: Strings = {
   slotsLeft: (n: number) => `(pozostało ${n})`,
   noGap: "Brak wolnego czasu w tym dniu",
   deleteSlot: (n: number) => `Usuń przedział ${n}`,
+  mergeSlots: (a: number, b: number) => `Połącz przedziały ${a} i ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, przedział ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Przedział ${n}`,

@@ -79,6 +79,7 @@ export const ro: Strings = {
   slotsLeft: (n: number) => `(încă ${n})`,
   noGap: "Nu mai este timp liber în această zi",
   deleteSlot: (n: number) => `Șterge intervalul ${n}`,
+  mergeSlots: (a: number, b: number) => `Unește intervalele ${a} și ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, intervalul ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Interval ${n}`,

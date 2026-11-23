@@ -78,6 +78,7 @@ export const el: Strings = {
   slotsLeft: (n: number) => `(+${n})`,
   noGap: "Δεν απομένει ελεύθερος χρόνος αυτή την ημέρα",
   deleteSlot: (n: number) => `Διαγραφή διαστήματος ${n}`,
+  mergeSlots: (a: number, b: number) => `Συγχώνευση διαστημάτων ${a} και ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, διάστημα ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Διάστημα ${n}`,

@@ -1,4 +1,5 @@
 import { MAX_SLOTS, TIME_STEP } from "./programs.js";
+import { perSlotTemp } from "./week.js";
 import { fromMinutes, isOnGrid, MINUTES_PER_DAY, roundToStep, toMinutes } from "./time.js";
 import type { ProgramSpec, Slot, TempRange } from "./types.js";
 
@@ -87,6 +88,41 @@ export function updateSlot(slots: readonly Slot[], index: number, patch: Partial
 
 export function removeSlot(slots: readonly Slot[], index: number): Slot[] {
   return slots.filter((_, i) => i !== index);
+}
+
+/**
+ * Slot `index` merged with the next one: from the earlier start to the later
+ * end, a gap between them filled; the first slot's temperature (the second's
+ * if the first has none). Null when there is no next slot or a time is invalid.
+ */
+export function mergedSlot(slots: readonly Slot[], index: number): Slot | null {
+  const a = slots[index];
+  const b = slots[index + 1];
+  if (!a || !b) return null;
+  const [as, ae, bs, be] = [a.start, a.end, b.start, b.end].map(toMinutes);
+  if (as == null || ae == null || bs == null || be == null) return null;
+  const merged: Slot = { ...a, start: as <= bs ? a.start : b.start, end: ae >= be ? a.end : b.end };
+  if (merged.temp === undefined && b.temp !== undefined) merged.temp = b.temp;
+  return merged;
+}
+
+/**
+ * Replace slot `index` and the next one by `merged` (default: mergedSlot()).
+ * Unsorted, so the merged slot keeps `index`. Null when they cannot be merged.
+ */
+export function mergeSlots(slots: readonly Slot[], index: number, merged = mergedSlot(slots, index)): Slot[] | null {
+  if (!merged || index + 1 >= slots.length) return null;
+  return slots.flatMap((s, i) => (i === index ? [merged] : i === index + 1 ? [] : [s]));
+}
+
+/**
+ * Whether merging needs a temperature choice: per-slot temperatures that
+ * differ between the two slots.
+ */
+export function mergeNeedsTemp(slots: readonly Slot[], index: number, spec: ProgramSpec): boolean {
+  const a = slots[index]?.temp;
+  const b = slots[index + 1]?.temp;
+  return perSlotTemp(spec) && a !== undefined && b !== undefined && a !== b;
 }
 
 const NEW_SLOT_MINUTES = 60;

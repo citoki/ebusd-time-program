@@ -11,7 +11,7 @@ import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
 import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, isServiceSource, resolveConfig, setbackEntityId, setbackWrite, type CardConfig, type SetbackWrite, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { formatTemp, programName, setLanguage, UI } from "./i18n/index.js";
-import { clampTemp, defaultTemp, openTime, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
+import { clampTemp, defaultTemp, openTime, mergedSlot, mergeNeedsTemp, mergeSlots, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
 import { MAX_SLOTS } from "./model/programs.js";
 import { fromMinutes, toMinutes } from "./model/time.js";
 import { DAYS, type Day, type ProgramSpec, type Slot, type Week } from "./model/types.js";
@@ -350,6 +350,12 @@ export class EbusdTimeProgramCard extends LitElement {
     const sheet = this._sheet;
     if (!cfg || !sheet) return;
     const { slots } = this._context(cfg);
+    if (sheet.merge) {
+      const merged = mergedSlot(slots, sheet.index);
+      const next = merged && mergeSlots(slots, sheet.index, { ...merged, temp: sheet.value });
+      if (next) this._setDraft(sortSlots(next));
+      return;
+    }
     this._setDraft(updateSlot(slots, sheet.index, sheetPatch(sheet)));
   };
 
@@ -360,6 +366,21 @@ export class EbusdTimeProgramCard extends LitElement {
   private _onDelete = (index: number) => {
     if (!this._cfg) return;
     this._setDraft(removeSlot(this._context(this._cfg).slots, index));
+  };
+
+  /** Merge slot `index` with the next one; differing temperatures are chosen in the temp sheet first. */
+  private _onMerge = (index: number) => {
+    this._dismissSuccess();
+    if (!this._cfg) return;
+    const { slots, spec } = this._context(this._cfg);
+    const merged = mergedSlot(slots, index);
+    if (!merged) return;
+    if (spec.temp && mergeNeedsTemp(slots, index, spec)) {
+      this._sheet = { index, field: "temp", value: clampTemp(merged.temp!, spec.temp), merge: true };
+      return;
+    }
+    const next = mergeSlots(slots, index, merged);
+    if (next) this._setDraft(sortSlots(next));
   };
 
   private _onAdd = () => {
@@ -620,6 +641,7 @@ export class EbusdTimeProgramCard extends LitElement {
                 addBlocked: addBlocked(slots, spec),
                 onEdit: this._onEdit,
                 onDelete: this._onDelete,
+                onMerge: this._onMerge,
                 onAdd: this._onAdd,
                 info: infoText(spec, this._setback[this._active] ?? null),
                 onInfo: this._onInfo,
@@ -758,7 +780,10 @@ export class EbusdTimeProgramCard extends LitElement {
   private _renderSheet(ctx: EditorContext, sheet: SheetState): TemplateResult {
     // issues of the edited slot as if the sheet value were committed (unsorted, so indexes stay)
     const patch = sheetPatch(sheet);
-    const candidate = ctx.slots.map((s, i) => (i === sheet.index ? { ...s, ...patch } : s));
+    const merged = sheet.merge ? mergedSlot(ctx.slots, sheet.index) : null;
+    const candidate =
+      (merged && mergeSlots(ctx.slots, sheet.index, { ...merged, ...patch })) ??
+      ctx.slots.map((s, i) => (i === sheet.index ? { ...s, ...patch } : s));
     const issues: Issue[] = [];
     for (const x of validateDay(candidate, ctx.spec)) {
       if (x.level === "info" || (sheet.field === "temp") !== (x.field === "temp")) continue;

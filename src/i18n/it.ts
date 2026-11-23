@@ -78,6 +78,7 @@ export const it: Strings = {
   slotsLeft: (n: number) => (n === 1 ? "(ne resta 1)" : `(ne restano ${n})`),
   noGap: "Nessun tempo libero rimasto in questo giorno",
   deleteSlot: (n: number) => `Elimina fascia ${n}`,
+  mergeSlots: (a: number, b: number) => `Unisci fasce ${a} e ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, fascia ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Fascia ${n}`,

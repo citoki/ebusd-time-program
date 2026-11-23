@@ -23,6 +23,8 @@ export interface SlotListProps {
   addBlocked: string | null;
   onEdit: (index: number, field: SlotField) => void;
   onDelete: (index: number) => void;
+  /** Merge slot `index` with the next one (gap filled; differing temperatures are chosen by the user). */
+  onMerge: (index: number) => void;
   onAdd: () => void;
   /** Tooltip of the info button: what happens outside the slots. */
   info: string;
@@ -38,6 +40,8 @@ export interface SlotListProps {
 const ICON_DELETE = svg`<path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />`;
 const ICON_ADD = svg`<path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />`;
 const ICON_INFO = svg`<path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z" />`;
+// mdi:call-merge
+const ICON_MERGE = svg`<path d="M17,20.41L18.41,19L15,15.59L13.59,17M7.5,8H11V13.59L5.59,19L7,20.41L13,14.41V8H16.5L12,3.5" />`;
 const icon = (path: ReturnType<typeof svg>) =>
   html`<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">${path}</svg>`;
 
@@ -138,12 +142,31 @@ function renderRow(p: SlotListProps, slot: Slot, i: number, rowTemps: boolean): 
     <button class="icon-btn" aria-label=${UI.deleteSlot(n)} title=${UI.deleteSlot(n)} @click=${() => p.onDelete(i)}>
       ${icon(ICON_DELETE)}
     </button>
+    ${i > 0 ? renderMerge(p, i) : nothing}
     ${rowIssues.length
       ? html`<div class="row-issues" id=${issueId}>
           ${rowIssues.map((x) => html`<p class="issue ${x.level}">${x.level === "info" ? "ⓘ" : "⚠"} ${issueMessage(x)}</p>`)}
         </div>`
       : nothing}
   </div>`;
+}
+
+/**
+ * Merge button on the line above row `i` (merges slot i-1 with slot i). Shown
+ * on hover over either row (desktop), always on touch screens and always when
+ * the two slots touch with the same temperature ("mergeable" hint).
+ */
+function renderMerge(p: SlotListProps, i: number): TemplateResult {
+  const touching = p.issues.some((x) => x.code === "mergeable" && x.slot === i && x.params?.["a"] === i);
+  const label = UI.mergeSlots(i, i + 1);
+  return html`<button
+    class="merge-btn ${touching ? "touching" : ""}"
+    aria-label=${label}
+    title=${label}
+    @click=${() => p.onMerge(i - 1)}
+  >
+    ${icon(ICON_MERGE)}
+  </button>`;
 }
 
 function renderAdd(p: SlotListProps, count: number): TemplateResult {

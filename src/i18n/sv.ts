@@ -78,6 +78,7 @@ export const sv: Strings = {
   slotsLeft: (n: number) => `(${n} kvar)`,
   noGap: "Ingen ledig tid kvar denna dag",
   deleteSlot: (n: number) => `Ta bort period ${n}`,
+  mergeSlots: (a: number, b: number) => `Slå ihop period ${a} och ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, period ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Period ${n}`,

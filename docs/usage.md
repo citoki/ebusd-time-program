@@ -29,6 +29,12 @@ and keeps such times; changing one moves it to the next 10-minute step.
 - **Add time slot** adds a one-hour slot an hour after the last one (or in the first free gap), with the
   temperature of the last slot. The number in brackets is how many slots are left.
 - The bin deletes a slot.
+- The merge button on the line between two slots joins them into one slot from the first start to the
+  last end; a gap between them is filled. With a mouse it appears when you hover over either slot, on
+  touch screens it is always shown, and when the two slots touch with the same temperature it is always
+  shown too. If the two slots have different temperatures, a dialog asks for the temperature of the merged
+  slot first; **Cancel** leaves both slots as they were. Like every edit, the result is only written with
+  **Apply**.
 - **ⓘ** explains what happens outside the slots. For a zone it opens a dialog where you can change the
   set-back temperature it heats to outside the slots; **Save** writes it to the controller right away.
 
@@ -46,7 +52,7 @@ The card checks the slots while you type:
 | Temperature missing or outside the range | **Error**, apply is blocked |
 | Temperature not on a 0.5 °C step | Warning, rounded when saving |
 | Zone below 15 °C | Warning, in case it was a typo |
-| Two slots touch and have the same temperature | Hint that they could be merged |
+| Two slots touch and have the same temperature | Hint that they could be merged; the merge button stays visible |
 
 The "Current schedule" chart (titled "Preview" while there are unsaved changes) shows the result immediately, with the selected days highlighted and a line for the current time.
 
