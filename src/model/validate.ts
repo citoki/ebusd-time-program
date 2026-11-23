@@ -33,7 +33,7 @@ export const hasErrors = (issues: readonly Issue[]): boolean =>
  * Validate the slots of one day for a program. Slots may be in any order;
  * overlap is detected on start-sorted order and reported on the later slot.
  * Indexes in the result refer to the input array.
- * Times off the 10-minute grid (e.g. 17:22, set in the Saunier Duval app on a
+ * Times off the 10-minute grid (e.g. 17:22, written directly via eBUS on a
  * controller that stores single minutes) are valid: the card shows and keeps
  * them; only editing a time snaps it to the grid.
  */

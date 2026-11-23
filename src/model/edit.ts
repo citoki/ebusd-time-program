@@ -21,7 +21,7 @@ export function clampTime(minutes: number, field: TimeField): number {
 
 /**
  * The time the time sheet opens with: the stored time as it is, also off the
- * 10-minute grid (e.g. 17:22 from the Saunier Duval app), only kept within the
+ * 10-minute grid (e.g. 17:22 written directly via eBUS), only kept within the
  * field's range. Stepping it then snaps to the grid.
  */
 export function openTime(minutes: number, field: TimeField): number {
