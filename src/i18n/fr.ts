@@ -78,6 +78,7 @@ export const fr: Strings = {
   slotsLeft: (n: number) => (n === 1 ? "(1 restante)" : `(${n} restantes)`),
   noGap: "Plus de temps libre ce jour-là",
   deleteSlot: (n: number) => `Supprimer la plage ${n}`,
+  mergeSlots: (a: number, b: number) => `Fusionner les plages ${a} et ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, plage ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Plage ${n}`,

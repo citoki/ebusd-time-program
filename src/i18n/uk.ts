@@ -86,6 +86,7 @@ export const uk: Strings = {
   slotsLeft: (n: number) => `(залишилось ${n})`,
   noGap: "У цей день більше немає вільного часу",
   deleteSlot: (n: number) => `Видалити інтервал ${n}`,
+  mergeSlots: (a: number, b: number) => `Об’єднати інтервали ${a} і ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, інтервал ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Інтервал ${n}`,

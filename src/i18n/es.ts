@@ -78,6 +78,7 @@ export const es: Strings = {
   slotsLeft: (n: number) => (n === 1 ? "(queda 1)" : `(quedan ${n})`),
   noGap: "No queda tiempo libre este día",
   deleteSlot: (n: number) => `Eliminar franja ${n}`,
+  mergeSlots: (a: number, b: number) => `Unir franjas ${a} y ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, franja ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Franja ${n}`,

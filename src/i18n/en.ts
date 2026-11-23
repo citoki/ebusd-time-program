@@ -84,6 +84,7 @@ export const en = {
   slotsLeft: (n: number) => `(${n} left)`,
   noGap: "No free time left on this day",
   deleteSlot: (n: number) => `Delete slot ${n}`,
+  mergeSlots: (a: number, b: number) => `Merge slots ${a} and ${b}`,
   editField: (field: Field, n: number) => `${FIELD[field]}, slot ${n}`,
   tempUnknown: "– °C",
   // sheets

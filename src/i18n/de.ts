@@ -77,6 +77,7 @@ export const de: Strings = {
   slotsLeft: (n: number) => `(${n} frei)`,
   noGap: "An diesem Tag ist keine Zeit mehr frei",
   deleteSlot: (n: number) => `Zeitfenster ${n} löschen`,
+  mergeSlots: (a: number, b: number) => `Zeitfenster ${a} und ${b} zusammenfassen`,
   editField: (field: Field, n: number) => `${FIELD[field]}, Zeitfenster ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Zeitfenster ${n}`,

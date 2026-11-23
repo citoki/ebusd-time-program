@@ -78,6 +78,7 @@ export const nl: Strings = {
   slotsLeft: (n: number) => `(nog ${n})`,
   noGap: "Geen vrije tijd meer op deze dag",
   deleteSlot: (n: number) => `Tijdvak ${n} verwijderen`,
+  mergeSlots: (a: number, b: number) => `Tijdvakken ${a} en ${b} samenvoegen`,
   editField: (field: Field, n: number) => `${FIELD[field]}, tijdvak ${n}`,
   tempUnknown: "– °C",
   sheetTitle: (field: Field, n: number) => `${FIELD[field]} · Tijdvak ${n}`,

@@ -3,6 +3,9 @@ import {
   clampTemp,
   clampTime,
   defaultTemp,
+  mergedSlot,
+  mergeNeedsTemp,
+  mergeSlots,
   openTime,
   removeSlot,
   sortSlots,
@@ -107,6 +110,58 @@ describe("slot list edits", () => {
 
   it("removeSlot drops by index", () => {
     expect(removeSlot(slots, 0)).toEqual([slots[1]]);
+  });
+});
+
+describe("mergeSlots", () => {
+  const day: Slot[] = [
+    { start: "06:00", end: "08:00", temp: 21 },
+    { start: "17:00", end: "22:00", temp: 19 },
+    { start: "22:00", end: "23:00", temp: 19 },
+  ];
+
+  it("fills the gap and keeps the first slot's temperature", () => {
+    expect(mergeSlots(day, 0)).toEqual([
+      { start: "06:00", end: "22:00", temp: 21 },
+      { start: "22:00", end: "23:00", temp: 19 },
+    ]);
+  });
+
+  it("merges touching slots", () => {
+    expect(mergeSlots(day, 1)).toEqual([day[0], { start: "17:00", end: "23:00", temp: 19 }]);
+  });
+
+  it("covers overlapping and contained slots", () => {
+    expect(mergeSlots([{ start: "06:00", end: "20:00", temp: 20 }, { start: "07:00", end: "09:00", temp: 22 }], 0)).toEqual([
+      { start: "06:00", end: "20:00", temp: 20 },
+    ]);
+  });
+
+  it("works without temperatures and takes the second temperature when the first is missing", () => {
+    expect(mergeSlots([{ start: "06:00", end: "07:00" }, { start: "08:00", end: "09:00" }], 0)).toEqual([
+      { start: "06:00", end: "09:00" },
+    ]);
+    expect(mergeSlots([{ start: "06:00", end: "07:00" }, { start: "08:00", end: "09:00", temp: 20 }], 0)).toEqual([
+      { start: "06:00", end: "09:00", temp: 20 },
+    ]);
+  });
+
+  it("takes a given merged slot (temperature chosen in the sheet)", () => {
+    const merged = { ...mergedSlot(day, 0)!, temp: 19 };
+    expect(mergeSlots(day, 0, merged)).toEqual([{ start: "06:00", end: "22:00", temp: 19 }, day[2]]);
+  });
+
+  it("asks for a temperature only for differing per-slot temperatures", () => {
+    expect(mergeNeedsTemp(day, 0, z1)).toBe(true);
+    expect(mergeNeedsTemp(day, 1, z1)).toBe(false); // both 19
+    expect(mergeNeedsTemp(day, 0, hwc)).toBe(false); // one temperature for all slots
+    expect(mergeNeedsTemp(day, 0, cc)).toBe(false); // no temperature
+    expect(mergeNeedsTemp([{ start: "06:00", end: "07:00" }, day[1]!], 0, z1)).toBe(false);
+  });
+
+  it("refuses the last slot and invalid times", () => {
+    expect(mergeSlots(day, 2)).toBeNull();
+    expect(mergeSlots([{ start: "xx", end: "07:00" }, { start: "08:00", end: "09:00" }], 0)).toBeNull();
   });
 });
 
