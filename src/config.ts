@@ -3,14 +3,19 @@ import type { ProgramId, ProgramSpec } from "./model/types.js";
 import { PREVIEW_DAYS, type PreviewDays } from "./model/week.js";
 
 export type DefaultDays = "all" | "weekdays" | "weekend" | "today";
-export type CardTheme = "brand" | "default";
-export const THEMES: readonly CardTheme[] = ["brand", "default"];
+export type CardTheme = "vaillant" | "saunier-duval" | "default";
+export const THEMES: readonly CardTheme[] = ["vaillant", "saunier-duval", "default"];
+/** Old theme names still accepted in existing configs. */
+const THEME_ALIASES: Readonly<Record<string, CardTheme>> = { brand: "vaillant" };
 export type CardLayout = "auto" | "wide" | "narrow";
 export const LAYOUTS: readonly CardLayout[] = ["auto", "wide", "narrow"];
 export type CardMode = "edit" | "preview";
-/** Where the time programs come from: ebusd's MQTT sensors, or the Vaillant eBUS integration's actions. */
-export type CardSource = "mqtt" | "vaillant_ebus";
-export const SOURCES: readonly CardSource[] = ["mqtt", "vaillant_ebus"];
+/** Integration sources that expose `read_time_program` / `write_time_program` actions. */
+export type ServiceSource = "vaillant_ebus" | "arotherm_genia_ebusd";
+/** Where the time programs come from: ebusd's MQTT sensors, or a supported integration's actions. */
+export type CardSource = "mqtt" | ServiceSource;
+export const SOURCES: readonly CardSource[] = ["mqtt", "vaillant_ebus", "arotherm_genia_ebusd"];
+export const isServiceSource = (source: CardSource): source is ServiceSource => source !== "mqtt";
 export type TempLabels = "auto" | "always" | "never";
 export const TEMP_LABELS: readonly TempLabels[] = ["auto", "always", "never"];
 export const MODES: readonly CardMode[] = ["edit", "preview"];
@@ -34,11 +39,12 @@ export interface CardConfig {
   /**
    * `mqtt` (default): ebusd's MQTT sensors and `mqtt.publish`.
    * `vaillant_ebus`: the Vaillant eBUS integration's `read_time_program` / `write_time_program` actions.
+   * `arotherm_genia_ebusd`: the aroTHERM & GeniaAir (eBUS) integration's `read_time_program` / `write_time_program` actions.
    */
   source?: CardSource;
-  /** vaillant_ebus: config entry of the integration, only needed when several are set up. */
+  /** Service sources (`vaillant_ebus`, `arotherm_genia_ebusd`): config entry of the integration, only needed when several are set up. */
   entry_id?: string;
-  /** vaillant_ebus: seconds between reads of the programs (default 300, 0 = only on load and after writes). */
+  /** Service sources (`vaillant_ebus`, `arotherm_genia_ebusd`): seconds between reads of the programs (default 300, 0 = only on load and after writes). */
   refresh_interval?: number;
   mqtt_prefix?: string;
   circuit?: string;
@@ -50,7 +56,8 @@ export interface CardConfig {
   default_days?: DefaultDays;
   show_preview?: boolean;
   /**
-   * `brand` (default): the card's own dark look, teal accent, red heating times.
+   * `vaillant` (default): the card's own dark look, teal accent, red heating times.
+   * `saunier-duval`: light look in Saunier Duval red, as in the MiGo Link app.
    * `default`: the HA theme, with its primary and accent colour.
    */
   theme?: CardTheme;
@@ -92,7 +99,7 @@ export interface ResolvedConfig {
   language: string | null;
   source: CardSource;
   entryId: string | null;
-  /** Seconds between reads (vaillant_ebus source); 0 = no periodic reads. */
+  /** Seconds between reads (service sources `vaillant_ebus`, `arotherm_genia_ebusd`); 0 = no periodic reads. */
   refreshInterval: number;
   prefix: string;
   circuit: string;
@@ -138,7 +145,7 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   if (!Array.isArray(entries) || entries.length === 0) {
     throw new ConfigError("`programs` must be a non-empty list");
   }
-  const theme = config.theme ?? "brand";
+  const theme = THEME_ALIASES[config.theme as string] ?? config.theme ?? "vaillant";
   if (!THEMES.includes(theme)) {
     throw new ConfigError(`Unknown theme "${String(theme)}" (supported: ${THEMES.join(", ")})`);
   }
@@ -175,7 +182,10 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
     }
     if (seen.has(p.id)) throw new ConfigError(`Program "${p.id}" is listed twice`);
     seen.add(p.id);
-    const spec = p.message_prefix ? { ...base, messagePrefix: p.message_prefix } : base;
+    const defaultPrefix =
+      source === "arotherm_genia_ebusd" && p.id === "cc" ? "CirculationTimer" : base.messagePrefix;
+    const messagePrefix = p.message_prefix ?? defaultPrefix;
+    const spec = messagePrefix !== base.messagePrefix ? { ...base, messagePrefix } : base;
     const setbackEntity = p.setback_entity ?? (p.id === "z1" ? config.setback_entity : undefined) ?? null;
     return { spec, name: p.name ?? null, setbackEntity };
   });

@@ -3,6 +3,7 @@ import {
   clampTemp,
   clampTime,
   defaultTemp,
+  openTime,
   removeSlot,
   sortSlots,
   stepPart,
@@ -30,6 +31,22 @@ describe("time stepping", () => {
   it("snaps to the 10-minute grid", () => {
     expect(clampTime(t("06:34"), "start")).toBe(t("06:30"));
     expect(clampTime(t("06:35"), "start")).toBe(t("06:40"));
+  });
+
+  it("the sheet opens with an off-grid time as it is, only kept in range", () => {
+    expect(openTime(t("17:22"), "start")).toBe(t("17:22"));
+    expect(openTime(t("23:55"), "start")).toBe(t("23:50"));
+    expect(openTime(t("00:05"), "end")).toBe(t("00:10"));
+  });
+
+  it("stepping an off-grid time moves to the next grid time in that direction", () => {
+    expect(stepTime(t("17:22"), 10, "start")).toBe(t("17:30"));
+    expect(stepTime(t("17:22"), -10, "start")).toBe(t("17:20"));
+    expect(stepTime(t("23:58"), 10, "end")).toBe(t("24:00"));
+    expect(stepPart(t("17:22"), "minute", 1, "start")).toBe(t("17:30"));
+    expect(stepPart(t("17:22"), "minute", -1, "start")).toBe(t("17:20"));
+    expect(stepPart(t("17:55"), "minute", 1, "start")).toBe(t("17:00"));
+    expect(stepPart(t("17:22"), "hour", 1, "start")).toBe(t("18:20"));
   });
 
   it("±10 min carries into the hour", () => {
@@ -102,6 +119,19 @@ describe("suggestSlot", () => {
   it("one hour after the last slot, copying its temperature", () => {
     const s = suggestSlot([{ start: "06:30", end: "11:30", temp: 25 }], z1);
     expect(s).toEqual({ start: "12:30", end: "13:30", temp: 25 });
+  });
+
+  it("starts on the grid after a slot that ends off it", () => {
+    expect(suggestSlot([{ start: "17:22", end: "19:58", temp: 21 }], z1)).toEqual({ start: "21:00", end: "22:00", temp: 21 });
+    // first free gap: start rounded up, end before the next slot rounded down
+    const g = suggestSlot(
+      [
+        { start: "00:00", end: "05:03" },
+        { start: "05:47", end: "24:00" },
+      ],
+      cc,
+    );
+    expect(g).toEqual({ start: "05:10", end: "05:40" });
   });
 
   it("is cut at 24:00", () => {

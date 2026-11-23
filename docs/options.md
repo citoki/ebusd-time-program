@@ -21,7 +21,7 @@ type: custom:ebusd-time-program-card
 | `default_days` | Days selected when the card opens: `weekdays`, `weekend`, `all` or `today` | `weekdays` |
 | `show_preview` | Show the week preview in edit mode | `true` |
 | `layout` | `auto`: two columns from a card width of 720 px; `wide` or `narrow` force one | `auto` |
-| `theme` | `brand`: the card's own dark design; `default`: your Home Assistant theme with its primary and accent colour | `brand` |
+| `theme` | `vaillant`: the card's own dark design; `saunier-duval`: light design in Saunier Duval red; `default`: your Home Assistant theme with its primary and accent colour | `vaillant` |
 | `accent` | Any CSS colour to replace the accent colour, e.g. `"#e07a1f"` | theme's |
 | `language` | Card language, e.g. `de` or `en-GB`, see [languages](languages.md) | Home Assistant user's language |
 
@@ -43,22 +43,30 @@ type: custom:ebusd-time-program-card
 
 ## Source
 
-By default the card reads ebusd's MQTT sensors and writes with `mqtt.publish`. Alternatively it can use the
-[Vaillant eBUS](https://github.com/MarkBovee/vaillant-ebus) integration, which talks to ebusd over TCP without MQTT.
-It needs a version with the `vaillant_ebus.read_time_program` and `vaillant_ebus.write_time_program` actions.
+By default the card reads ebusd's MQTT sensors and writes with `mqtt.publish`. Alternatively it can use a Home Assistant
+integration that provides `read_time_program` and `write_time_program` actions:
+
+- **`vaillant_ebus`** — [Vaillant eBUS](https://github.com/MarkBovee/vaillant-ebus) (talks to ebusd over TCP without MQTT)
+- **`arotherm_genia_ebusd`** — [aroTHERM & GeniaAir (eBUS)](https://github.com/R91g/arotherm-genia-ebusd) (maps `z1` → `Z1Timer`, `hwc` → `HwcTimer`, `cc` → `CirculationTimer`)
 
 | Option | Description | Default |
 |---|---|---|
-| `source` | `mqtt`, or `vaillant_ebus` for the Vaillant eBUS integration | `mqtt` |
-| `refresh_interval` | `vaillant_ebus`: seconds between reads of the programs (from ebusd's cache). `0`: only when the dashboard opens and after a write | `300` |
-| `entry_id` | `vaillant_ebus`: config entry of the integration, only needed when several are set up | |
+| `source` | `mqtt`, `vaillant_ebus`, or `arotherm_genia_ebusd` | `mqtt` |
+| `refresh_interval` | Service sources: seconds between reads of the programs (from the integration/ebusd cache). `0`: only when the dashboard opens and after a write | `300` |
+| `entry_id` | Service sources: config entry of the integration, only needed when several are set up | |
 
-With `vaillant_ebus`, the MQTT options below are not used. The set-back temperature of a zone needs
-`setback_entity` (e.g. the integration's `number` entity).
+With `vaillant_ebus` or `arotherm_genia_ebusd`, the MQTT options below are not used. The set-back temperature of a zone
+needs `setback_entity` (e.g. the integration's `number` entity).
 
 ```yaml
 type: custom:ebusd-time-program-card
 source: vaillant_ebus
+programs: [z1, hwc, cc]
+```
+
+```yaml
+type: custom:ebusd-time-program-card
+source: arotherm_genia_ebusd
 programs: [z1, hwc, cc]
 ```
 

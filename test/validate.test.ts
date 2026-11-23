@@ -29,15 +29,15 @@ describe("validateDay – valid programs from the live controller", () => {
   it("end 24:00 is valid", () => {
     expect(validateDay([{ start: "23:50", end: "24:00" }], cc)).toEqual([]);
   });
+  it("times off the 10-minute grid, as some controllers store them (e.g. BASS3)", () => {
+    expect(validateDay([{ start: "17:22", end: "19:58" }], cc)).toEqual([]);
+  });
 });
 
 describe("validateDay – errors", () => {
   it("malformed time", () => {
     const issues = validateDay([{ start: "6:30", end: "11:30" }], cc);
     expect(issues[0]).toMatchObject({ code: "invalid_time", slot: 0, field: "start" });
-  });
-  it("off the 10-minute grid", () => {
-    expect(codes(validateDay([{ start: "06:35", end: "11:30" }], cc))).toEqual(["off_grid"]);
   });
   it("start 24:00", () => {
     expect(codes(validateDay([{ start: "24:00", end: "24:00" }], cc))).toContain("start_24");

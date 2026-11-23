@@ -1,5 +1,5 @@
 import { MAX_SLOTS, TIME_STEP } from "./programs.js";
-import { fromMinutes, MINUTES_PER_DAY, roundToStep, toMinutes } from "./time.js";
+import { fromMinutes, isOnGrid, MINUTES_PER_DAY, roundToStep, toMinutes } from "./time.js";
 import type { ProgramSpec, Slot, TempRange } from "./types.js";
 
 /** Pure editing helpers for the slot editor (no DOM). */
@@ -19,8 +19,28 @@ export function clampTime(minutes: number, field: TimeField): number {
   return Math.min(max, Math.max(min, snapped));
 }
 
-/** Add `delta` minutes (carrying into hours), clamped to the field's range. */
+/**
+ * The time the time sheet opens with: the stored time as it is, also off the
+ * 10-minute grid (e.g. 17:22 written directly via eBUS), only kept within the
+ * field's range. Stepping it then snaps to the grid.
+ */
+export function openTime(minutes: number, field: TimeField): number {
+  const { min, max } = timeBounds(field);
+  return Math.min(max, Math.max(min, minutes));
+}
+
+/** The next grid time in direction `dir`: 17:22 -> 17:30 (up) or 17:20 (down). */
+function nextOnGrid(minutes: number, dir: 1 | -1): number {
+  const below = minutes - (minutes % TIME_STEP);
+  return dir > 0 ? below + TIME_STEP : below;
+}
+
+/**
+ * Add `delta` minutes (carrying into hours), clamped to the field's range.
+ * A time off the grid first moves to the next grid time in that direction.
+ */
 export function stepTime(minutes: number, delta: number, field: TimeField): number {
+  if (!isOnGrid(minutes) && delta !== 0) return clampTime(nextOnGrid(minutes, delta > 0 ? 1 : -1), field);
   return clampTime(minutes + delta, field);
 }
 
@@ -36,7 +56,7 @@ export function stepPart(minutes: number, part: "hour" | "minute", dir: 1 | -1, 
     return clampTime(nh * 60 + (nh >= 24 ? 0 : m), field);
   }
   if (h === 24) return minutes; // 24:00 has no minutes to change
-  const nm = (m + dir * TIME_STEP + 60) % 60;
+  const nm = (isOnGrid(m) ? m + dir * TIME_STEP + 60 : nextOnGrid(m, dir)) % 60;
   return clampTime(h * 60 + nm, field);
 }
 
@@ -70,6 +90,7 @@ export function removeSlot(slots: readonly Slot[], index: number): Slot[] {
 }
 
 const NEW_SLOT_MINUTES = 60;
+const ceilToGrid = (minutes: number) => Math.ceil(minutes / TIME_STEP) * TIME_STEP;
 /** Gap kept after the last slot so a new slot does not touch it. */
 const NEW_SLOT_GAP = 60;
 
@@ -93,7 +114,8 @@ export function suggestSlot(slots: readonly Slot[], spec: ProgramSpec): Slot | n
 
   if (!last) return make(6 * 60, 7 * 60);
 
-  const after = last.end + NEW_SLOT_GAP;
+  // new slots start on the grid, also after a slot that ends off it (e.g. 19:58)
+  const after = ceilToGrid(last.end + NEW_SLOT_GAP);
   if (after + TIME_STEP <= MINUTES_PER_DAY) {
     return make(after, Math.min(after + NEW_SLOT_MINUTES, MINUTES_PER_DAY));
   }
@@ -101,8 +123,8 @@ export function suggestSlot(slots: readonly Slot[], spec: ProgramSpec): Slot | n
   // first free gap, from midnight
   let cursor = 0;
   for (const r of [...ranges, { start: MINUTES_PER_DAY, end: MINUTES_PER_DAY }]) {
-    if (r.start - cursor >= TIME_STEP) return make(cursor, Math.min(cursor + NEW_SLOT_MINUTES, r.start));
-    cursor = Math.max(cursor, r.end);
+    if (r.start - cursor >= TIME_STEP) return make(cursor, Math.min(cursor + NEW_SLOT_MINUTES, r.start - (r.start % TIME_STEP)));
+    cursor = Math.max(cursor, ceilToGrid(r.end));
   }
   return null;
 }

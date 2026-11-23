@@ -12,7 +12,7 @@ import { normalizeSlots, sameSlots } from "./model/week.js";
  *
  * Two ways to write a day:
  * - MQTT (`publish`): the card sends each slot and waits until HA's sensors show the day,
- * - an action (`writeDay`, source `vaillant_ebus`): the integration writes the day,
+ * - an action (`writeDay`, service sources `vaillant_ebus`, `arotherm_genia_ebusd`): the integration writes the day,
  *   reads it back and returns what the controller stored.
  */
 

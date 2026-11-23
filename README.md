@@ -14,7 +14,7 @@ A Home Assistant dashboard card to view and edit the weekly time programs of a V
 
 - **Heating zones 1–3, hot water and circulation**, each on its own tab
 - **Edit several days at once**: quick selection for Mo–Fr, Sa–Su or all days
-- **Up to 3 slots per day** on the controller's 10-minute grid, with a temperature per slot
+- **Up to 3 slots per day** in 10-minute steps, with a temperature per slot
 - **Checks before writing**: overlaps, end before start, temperatures out of range
 - **Verified writes**: every day is read back from the controller; retry, continue or restore if one doesn't match
 - **Read-only preview mode** for a compact week overview, with a marker for the current time
@@ -96,7 +96,7 @@ That is enough for a standard ebusd setup with zone 1, hot water and circulation
 | `default_days` | `weekdays` | Days selected on open: `weekdays`, `weekend`, `all`, `today` |
 | `show_preview` | `true` | Week preview below the editor |
 | `layout` | `auto` | Two columns from 720 px card width; `wide` / `narrow` force one |
-| `theme` | `brand` | `brand`: the card's dark design; `default`: your Home Assistant theme |
+| `theme` | `vaillant` | `vaillant`: the card's dark design; `saunier-duval`: light design in Saunier Duval red; `default`: your Home Assistant theme |
 | `accent` | | CSS colour for the accent, e.g. `"#e07a1f"` |
 | `language` | HA user's | e.g. `de`, `en-GB` |
 | `mqtt_prefix` | `ebusd` | ebusd's MQTT topic prefix |

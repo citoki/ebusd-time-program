@@ -1,6 +1,6 @@
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { programFingerprint, readProgram, type ProgramRead, type ReadStatus } from "./adapters/mqtt.js";
-import { serviceStore, writeDayService } from "./adapters/vaillant-ebus.js";
+import { serviceLabel, serviceStore, writeDayService } from "./adapters/service.js";
 import { renderApplyBar } from "./components/apply-bar.js";
 import { renderBusyPanel } from "./components/busy-panel.js";
 import { renderDayPicker, selectionLabel } from "./components/day-picker.js";
@@ -8,10 +8,10 @@ import { renderTabs } from "./components/program-tabs.js";
 import { renderInfoSheet, renderSheet, SETBACK_ICON, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
-import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, resolveConfig, setbackEntityId, setbackWrite, type CardConfig, type SetbackWrite, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
+import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, isServiceSource, resolveConfig, setbackEntityId, setbackWrite, type CardConfig, type SetbackWrite, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
 import type { Hass } from "./hass.js";
 import { formatTemp, programName, setLanguage, UI } from "./i18n/index.js";
-import { clampTemp, clampTime, defaultTemp, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
+import { clampTemp, defaultTemp, openTime, removeSlot, sortSlots, suggestSlot, updateSlot } from "./model/edit.js";
 import { MAX_SLOTS } from "./model/programs.js";
 import { fromMinutes, toMinutes } from "./model/time.js";
 import { DAYS, type Day, type ProgramSpec, type Slot, type Week } from "./model/types.js";
@@ -121,7 +121,7 @@ export class EbusdTimeProgramCard extends LitElement {
   private _waiters: (() => void)[] = [];
   private _successTimer: ReturnType<typeof setTimeout> | undefined;
   private _clock: ReturnType<typeof setInterval> | undefined;
-  /** Source `vaillant_ebus`: unsubscribe from the shared program reads. */
+  /** Service sources (`vaillant_ebus`, `arotherm_genia_ebusd`): unsubscribe from the shared program reads. */
   private _unsubscribe: (() => void) | undefined;
   /** Rendered as a thumbnail in HA's "Add card" dialog: show a picture instead of live data. */
   private _inPicker = false;
@@ -222,7 +222,7 @@ export class EbusdTimeProgramCard extends LitElement {
       programs: [...DEFAULTS.programs],
       default_days: "weekdays",
       mode: "edit",
-      theme: "brand",
+      theme: "vaillant",
       layout: "auto",
     };
   }
@@ -230,13 +230,14 @@ export class EbusdTimeProgramCard extends LitElement {
   // ---------- data ----------
 
   /**
-   * Source `vaillant_ebus`: read the programs through the integration's action when
-   * the last read is older than the refresh interval (shared by all cards on the page).
+   * Service sources (`vaillant_ebus`, `arotherm_genia_ebusd`): read the programs through
+   * the integration's action when the last read is older than the refresh interval
+   * (shared by all cards on the page).
    */
   private _loadService(): void {
     const cfg = this._cfg;
     const hass = this._hass;
-    if (!cfg || !hass || cfg.source !== "vaillant_ebus" || !this.isConnected || this._inPicker) return;
+    if (!cfg || !hass || !isServiceSource(cfg.source) || !this.isConnected || this._inPicker) return;
     const maxAge = cfg.refreshInterval > 0 ? cfg.refreshInterval * 1000 : Infinity;
     for (const p of cfg.programs) void serviceStore.load(hass, cfg, p.spec, maxAge);
   }
@@ -246,7 +247,7 @@ export class EbusdTimeProgramCard extends LitElement {
     const cfg = this._cfg;
     const hass = this._hass;
     if (!cfg || !hass) return;
-    const service = cfg.source === "vaillant_ebus";
+    const service = isServiceSource(cfg.source);
     const entities = cfg.programs.map((p) => setbackEntityId(cfg, p, hass.states));
     const setback = entities.map((id) => (id ? hass.states[id]?.state : undefined));
     const programs = service
@@ -334,7 +335,7 @@ export class EbusdTimeProgramCard extends LitElement {
       if (!spec.temp) return;
       value = clampTemp(slot.temp ?? defaultTemp(spec)!, spec.temp);
     } else {
-      value = clampTime(toMinutes(slot[field]) ?? (field === "start" ? 6 * 60 : 7 * 60), field);
+      value = openTime(toMinutes(slot[field]) ?? (field === "start" ? 6 * 60 : 7 * 60), field);
     }
     this._sheet = { index, field, value };
   };
@@ -414,7 +415,7 @@ export class EbusdTimeProgramCard extends LitElement {
     const program = this._active;
     const spec = cfg.programs[program]!.spec;
     const countMessage = this._reads[program]?.countMessage ?? cfg.countMessage ?? COUNT_MESSAGE_CANDIDATES[0];
-    const service = cfg.source === "vaillant_ebus";
+    const service = isServiceSource(cfg.source);
     this._sheet = null;
     this._notice = null;
     const runner = new WriteJob(
@@ -573,7 +574,7 @@ export class EbusdTimeProgramCard extends LitElement {
       <ul class="mono">
         ${read.missing.map((id) => html`<li><code>${id}</code></li>`)}
       </ul>
-      <p class="hint">${this._cfg?.source === "vaillant_ebus" ? UI.missingHelpService : UI.missingHelp}</p>
+      <p class="hint">${this._cfg && isServiceSource(this._cfg.source) ? UI.missingHelpService(serviceLabel(this._cfg)) : UI.missingHelp}</p>
       ${extraZone ? html`<p class="hint">${UI.missingZone(programName(program), program.spec.id)}</p>` : nothing}
     </div>`;
   }
@@ -604,8 +605,8 @@ export class EbusdTimeProgramCard extends LitElement {
                 slots: loading ? null : slots,
                 unavailable:
                   this._reads[this._active]?.status === "offline"
-                    ? cfg.source === "vaillant_ebus"
-                      ? UI.offlineHelpService
+                    ? isServiceSource(cfg.source)
+                      ? UI.offlineHelpService(serviceLabel(cfg))
                       : UI.offlineHelp
                     : undefined,
                 issues: ctx.issues,
@@ -641,6 +642,7 @@ export class EbusdTimeProgramCard extends LitElement {
                     job: this._job,
                     programName: programName(program),
                     verifyTimeoutS: cfg.verifyTimeout,
+                    serviceLabel: isServiceSource(cfg.source) ? serviceLabel(cfg) : undefined,
                     onCancel: this._onCancelJob,
                     onRetry: this._onRetry,
                     onRestore: this._onRestore,

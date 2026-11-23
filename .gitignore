@@ -5,3 +5,4 @@ dist/
 node_modules/
 scripts/.x.mjs
 site/
+*-worktree

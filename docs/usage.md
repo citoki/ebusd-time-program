@@ -16,7 +16,9 @@ the program of one of them; pick which day to start from, or **Start empty**. Wh
 
 ## Edit time slots
 
-Each day has up to **3 slots**. Times are on the controller's 10-minute grid, `24:00` is allowed as an end time.
+Each day has up to **3 slots**. Times are set in 10-minute steps, `24:00` is allowed as an end time. Some controllers
+(e.g. Saunier Duval BASS3) also accept single minutes, such as `17:22` written directly via eBUS: the card shows
+and keeps such times; changing one moves it to the next 10-minute step.
 
 - **Tap a time** to change it: hours and minutes with arrows, or ±10 minutes. The keyboard works too.
 - **Tap a temperature** (zones and hot water) to change it in steps of 0.5 °C.
@@ -36,7 +38,7 @@ The card checks the slots while you type:
 
 | Check | Effect |
 |---|---|
-| Overlapping slots, end before start, start at `24:00`, time not on the 10-minute grid | **Error**, apply is blocked |
+| Overlapping slots, end before start, start at `24:00` | **Error**, apply is blocked |
 | Temperature missing or outside the range | **Error**, apply is blocked |
 | Temperature not on a 0.5 °C step | Warning, rounded when saving |
 | Zone below 15 °C | Warning, in case it was a typo |
@@ -110,10 +112,15 @@ The rows move on at midnight. Without the label line, the times are only visible
 On wide dashboards (card width from 720 px) the card uses two columns, on phones one. Force either with
 `layout: wide` or `layout: narrow`.
 
-`theme: brand` (default) is the card's own dark design with teal accents and red heating times.
+`theme: vaillant` (default) is the card's own dark design with teal accents and red heating times.
+`theme: saunier-duval` is a light design in Saunier Duval red.
 `theme: default` follows your Home Assistant theme and uses its primary and accent colours. Any accent colour can
 be set with `accent`.
 
 | `layout: narrow` | `theme: default` with a light Home Assistant theme |
 |---|---|
 | ![Narrow layout](assets/edit-narrow.webp){ .shot } | ![Home Assistant theme](assets/theme-default.webp){ .shot } |
+
+`theme: saunier-duval`
+
+![Saunier Duval theme](assets/theme-saunier-duval.webp){ .shot }

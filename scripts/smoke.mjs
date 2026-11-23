@@ -112,6 +112,18 @@ await check("source vaillant_ebus: a day the controller ignores stops the write"
   if (!panel.includes("did not store")) throw new Error(`failure should name the reason: ${panel}`);
 });
 
+await check("source arotherm_genia_ebusd: read and write circulation through CirculationTimer", "source=arotherm_genia_ebusd&tab=2&delay=0", async (card) => {
+  await card.locator(".slot-row").first().waitFor();
+  expectEqual(await card.locator(".slot-row").count(), 2, "CC slots Mo–Fr");
+  await card.locator(".field.time").nth(1).click(); // end time (06:10)
+  const sheet = card.locator("dialog[open]");
+  await sheet.locator(".quick .btn").nth(1).click(); // +10 min -> 06:20
+  await sheet.locator(".btn.primary").click(); // Done
+  await card.locator(".apply-bar .btn.primary").click(); // Apply to 5 days
+  await card.locator(".busy-panel.done").waitFor({ timeout: 15_000 });
+  expectEqual(await text(card.locator(".field.time").nth(1)), "06:20", "end time after write");
+});
+
 await browser.close();
 await server.close();
 console.log(failed ? `\n${failed} check(s) failed` : "\nall checks passed");

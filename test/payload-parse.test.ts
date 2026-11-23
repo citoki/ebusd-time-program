@@ -58,6 +58,9 @@ describe("buildDayPayloads – temperature programs", () => {
       "0;1;06:00;07:00;21.5",
     ]);
   });
+  it("keeps times off the 10-minute grid as they are", () => {
+    expect(buildDayPayloads(cc, [{ start: "17:22", end: "19:58" }])).toEqual(["0;1;17:22;19:58"]);
+  });
   it("empty day sends '-' as temperature", () => {
     expect(buildDayPayloads(z1, [])).toEqual(["0;0;00:00;00:00;0.0"]);
   });
@@ -66,7 +69,6 @@ describe("buildDayPayloads – temperature programs", () => {
 describe("buildDayPayloads – refuses invalid input", () => {
   it.each([
     ["overlap", [{ start: "06:00", end: "08:00" }, { start: "07:00", end: "09:00" }]],
-    ["off grid", [{ start: "06:05", end: "08:00" }]],
     ["end before start", [{ start: "08:00", end: "06:00" }]],
     [
       "too many slots",

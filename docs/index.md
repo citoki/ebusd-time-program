@@ -13,13 +13,13 @@ checks each day against what the controller reports back.
 - **Heating zones 1–3, hot water and circulation**, each on its own tab
 - **Edit several days at once**: quick selection for Mo–Fr, Sa–Su or all days; days with different programs are
   pointed out before you overwrite them
-- **Up to 3 slots per day** on the controller's 10-minute grid, with a temperature per slot for zones and hot water
+- **Up to 3 slots per day** in 10-minute steps, with a temperature per slot for zones and hot water
 - **Checks before writing**: overlaps, end before start, temperatures out of range, touching slots that could be merged
 - **Verified writes**: every day is read back from the controller; if one doesn't match, retry, continue or restore
 - **Week preview** with a marker for the current time, and a read-only [preview mode](usage.md#preview-mode)
 - **Status at a glance**: connected, waiting for values, ebusd offline, entities not found
 - **14 [languages](languages.md)**, following the Home Assistant user's language
-- **Two looks**: the card's own dark design, or your Home Assistant theme
+- **Three looks**: the card's own dark design, a light Saunier Duval design, or your Home Assistant theme
 
 ## Installation
 

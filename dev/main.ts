@@ -12,8 +12,8 @@ import { applyHaTheme, mountSettingsBar } from "./settings-bar.js";
 //   ignore=Z1Timer_Tuesday,...   writes the fake controller ACKs but never applies (-> failure)
 //   timeout=5            verify timeout in s (default 30)
 //   nomqtt=1             hass without callService
-//   source=vaillant_ebus read/write through the (fake) Vaillant eBUS integration's actions instead of MQTT
-//   refresh=60           vaillant_ebus: seconds between reads (default 300)
+//   source=vaillant_ebus|arotherm_genia_ebusd  read/write through the (fake) integration's actions instead of MQTT
+//   refresh=60           service sources: seconds between reads (default 300)
 //   state=startup|weekend|slot|offline|nohwc   start in a sensor-state scenario (toolbar on the page)
 //   programs=z1,z2,hwc   programs to show (the fake system has no Z2/Z3 sensors)
 //   lang=de|fr|en-GB|…   card language (default: hass.language = en)
@@ -21,7 +21,7 @@ import { applyHaTheme, mountSettingsBar } from "./settings-bar.js";
 //   labels=always|never  temperatures inside the bars (preview mode, default auto)
 //   range=today|today_tomorrow  preview rows (default week)   nolabel=1  hide the detail line
 //   layout=wide|narrow   force a layout (default auto)
-//   theme=default        HA theme instead of the brand look; ha=light fakes a light HA theme
+//   theme=default        HA theme instead of the vaillant look; theme=saunier-duval light red look; ha=light fakes a light HA theme
 //   (lang, theme and ha can also be switched with the selectors at the top of the page)
 const params = new URLSearchParams(location.search);
 
@@ -69,7 +69,7 @@ ebusd.hass = () => {
   return {
     ...hass,
     callService: (domain, name, data, ...rest) => {
-      if (domain === "vaillant_ebus") console.info(`${domain}.${name}`, data);
+      if (domain === "vaillant_ebus" || domain === "arotherm_genia_ebusd") console.info(`${domain}.${name}`, data);
       return hass.callService!(domain, name, data, ...rest);
     },
   };

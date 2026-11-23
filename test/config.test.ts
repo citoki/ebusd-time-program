@@ -50,8 +50,10 @@ describe("config", () => {
     expect(c.programs.map((p) => programName(p))).toEqual(["Zone 1", "Zone 2", "Zone 3", "Hot water", "Circulation"]);
   });
 
-  it("theme: brand by default, HA theme on request; accent overrides the colour", () => {
-    expect(cfg.theme).toBe("brand");
+  it("theme: vaillant by default, saunier-duval or HA theme on request; accent overrides the colour", () => {
+    expect(cfg.theme).toBe("vaillant");
+    expect(resolveConfig({ type: "x", theme: "saunier-duval" }).theme).toBe("saunier-duval");
+    expect(resolveConfig({ type: "x", theme: "brand" as never }).theme).toBe("vaillant");
     expect(resolveConfig({ type: "x", theme: "default" }).theme).toBe("default");
     expect(() => resolveConfig({ type: "x", theme: "dark" as never })).toThrow('Unknown theme "dark"');
     expect(accentStyle(cfg)).toBe("");
@@ -114,10 +116,22 @@ describe("config", () => {
     // tab: the configured name, else the short form
     expect(c.programs.map((p) => programTabLabel(p))).toEqual(["CC", "Living"]);
   });
-  it("source: MQTT by default; vaillant_ebus with entry and refresh interval", () => {
+  it("source: MQTT by default; service sources with entry, refresh interval and default prefixes", () => {
     expect([cfg.source, cfg.entryId, cfg.refreshInterval]).toEqual(["mqtt", null, 300]);
     const c = resolveConfig({ type: "x", source: "vaillant_ebus", entry_id: " abc ", refresh_interval: 0 });
     expect([c.source, c.entryId, c.refreshInterval]).toEqual(["vaillant_ebus", "abc", 0]);
+    expect(c.programs.map((p) => p.spec.messagePrefix)).toEqual(["Z1Timer", "HwcTimer", "CcTimer"]);
+
+    const ag = resolveConfig({ type: "x", source: "arotherm_genia_ebusd", entry_id: " def " });
+    expect([ag.source, ag.entryId, ag.refreshInterval]).toEqual(["arotherm_genia_ebusd", "def", 300]);
+    expect(ag.programs.map((p) => p.spec.messagePrefix)).toEqual(["Z1Timer", "HwcTimer", "CirculationTimer"]);
+
+    const customCc = resolveConfig({
+      type: "x",
+      source: "arotherm_genia_ebusd",
+      programs: [{ id: "cc", message_prefix: "CustomCcTimer" }],
+    });
+    expect(customCc.programs[0]!.spec.messagePrefix).toBe("CustomCcTimer");
   });
   it.each([
     [{ programs: [] }, "non-empty"],

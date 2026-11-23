@@ -1,4 +1,4 @@
-import type { ResolvedConfig } from "../config.js";
+import { isServiceSource, type ResolvedConfig, type ServiceSource } from "../config.js";
 import type { Hass } from "../hass.js";
 import { DAYS, type Day, type ProgramSpec, type Slot } from "../model/types.js";
 import { normalizeSlots } from "../model/week.js";
@@ -6,15 +6,30 @@ import { errorMessage } from "../write-job.js";
 import type { ProgramRead } from "./mqtt.js";
 
 /**
- * Source `vaillant_ebus`: the time programs come from the Vaillant eBUS integration
- * (github.com/MarkBovee/vaillant-ebus), which talks to ebusd over TCP instead of MQTT.
- * It has no sensor per slot; the card calls its actions instead:
- * - `vaillant_ebus.read_time_program` returns all days of a program,
- * - `vaillant_ebus.write_time_program` writes a day, reads it back and returns what the controller stored.
+ * Service-based sources (`vaillant_ebus`, `arotherm_genia_ebusd`): the time programs come
+ * from a Home Assistant integration's actions instead of ebusd MQTT discovery sensors:
+ * - `<domain>.read_time_program` returns all days of a program,
+ * - `<domain>.write_time_program` writes a day, reads it back and returns what the controller stored.
  */
-export const DOMAIN = "vaillant_ebus";
 export const READ_SERVICE = "read_time_program";
 export const WRITE_SERVICE = "write_time_program";
+
+/** Human-readable integration name for status/error texts. */
+export const SOURCE_LABELS: Record<ServiceSource, string> = {
+  vaillant_ebus: "Vaillant eBUS",
+  arotherm_genia_ebusd: "aroTHERM & GeniaAir (eBUS)",
+};
+
+/** Home Assistant service domain for a service-based card source. */
+export function serviceDomain(cfg: ResolvedConfig): ServiceSource {
+  if (!isServiceSource(cfg.source)) throw new Error(`Source ${cfg.source} has no actions`);
+  return cfg.source;
+}
+
+/** Human-readable integration label for a service-based card source. */
+export function serviceLabel(cfg: ResolvedConfig): string {
+  return SOURCE_LABELS[serviceDomain(cfg)];
+}
 
 /** One slot as the integration's actions read and write it. */
 export interface ServiceSlot {
@@ -91,13 +106,13 @@ const empty = (): Record<Day, Slot[] | null> => Object.fromEntries(DAYS.map((d) 
 export const loadingRead = (): ProgramRead => ({ status: "loading", days: empty(), countMessage: null, missing: [] });
 
 /** A program read after a failed read; `previous` keeps the last known days on a temporary failure. */
-export function errorRead(error: unknown, spec: ProgramSpec, previous?: ProgramRead): ProgramRead {
+export function errorRead(error: unknown, spec: ProgramSpec, domain: ServiceSource, previous?: ProgramRead): ProgramRead {
   if (isMissing(error)) {
     return {
       status: "missing",
       days: empty(),
       countMessage: null,
-      missing: [`${DOMAIN}.${READ_SERVICE} (${spec.messagePrefix}): ${errorText(error)}`],
+      missing: [`${domain}.${READ_SERVICE} (${spec.messagePrefix}): ${errorText(error)}`],
     };
   }
   return { status: "offline", days: previous?.days ?? empty(), countMessage: null, missing: [] };
@@ -111,17 +126,20 @@ function baseData(cfg: ResolvedConfig, spec: ProgramSpec): Record<string, unknow
 }
 
 /** `response` of HA's callService result (`{ context, response }`). */
-function responseOf<T>(result: unknown): T {
+function responseOf<T>(result: unknown, domain: ServiceSource): T {
   const response = result && typeof result === "object" && "response" in result ? (result as { response: unknown }).response : undefined;
-  if (!response || typeof response !== "object") throw new Error("The action returned no data (Vaillant eBUS too old?)");
+  if (!response || typeof response !== "object") {
+    throw new Error(`The action returned no data (${SOURCE_LABELS[domain]} too old?)`);
+  }
   return response as T;
 }
 
 /** Call `read_time_program` for one program. */
 export async function readProgramService(hass: Hass, cfg: ResolvedConfig, spec: ProgramSpec): Promise<ProgramRead> {
   if (!hass.callService) throw new Error("This Home Assistant connection cannot call actions");
-  const result = await hass.callService(DOMAIN, READ_SERVICE, baseData(cfg, spec), undefined, false, true);
-  return readFromResponse(responseOf<ReadResponse>(result), spec);
+  const domain = serviceDomain(cfg);
+  const result = await hass.callService(domain, READ_SERVICE, baseData(cfg, spec), undefined, false, true);
+  return readFromResponse(responseOf<ReadResponse>(result, domain), spec);
 }
 
 /**
@@ -131,9 +149,10 @@ export async function readProgramService(hass: Hass, cfg: ResolvedConfig, spec: 
  */
 export async function writeDayService(hass: Hass, cfg: ResolvedConfig, spec: ProgramSpec, day: Day, slots: readonly Slot[]): Promise<Slot[]> {
   if (!hass.callService) throw new Error("This Home Assistant connection cannot call actions");
+  const domain = serviceDomain(cfg);
   const data = { ...baseData(cfg, spec), days: [day], slots: toService(slots, spec) };
-  const result = await hass.callService(DOMAIN, WRITE_SERVICE, data, undefined, false, true);
-  const stored = responseOf<WriteResponse>(result).days?.[day];
+  const result = await hass.callService(domain, WRITE_SERVICE, data, undefined, false, true);
+  const stored = responseOf<WriteResponse>(result, domain).days?.[day];
   if (!stored) throw new Error(`The action did not report ${day}`);
   return fromService(stored, spec);
 }
@@ -174,7 +193,7 @@ export class ServiceStore {
       .then((read) => this.set(key, read, now))
       .catch((error: unknown) => {
         console.warn(`ebusd-time-program-card: reading ${spec.messagePrefix} failed:`, errorText(error));
-        this.set(key, errorRead(error, spec, this.entries.get(key)?.read), now);
+        this.set(key, errorRead(error, spec, serviceDomain(cfg), this.entries.get(key)?.read), now);
       });
     this.entries.set(key, { read: entry?.read ?? loadingRead(), at: entry?.at ?? null, pending });
     return pending;
@@ -211,7 +230,7 @@ export class ServiceStore {
 /** Retry a failed read after this long, whatever the refresh interval. */
 export const RETRY_MS = 30_000;
 
-const storeKey = (cfg: ResolvedConfig, spec: ProgramSpec) => `${cfg.entryId ?? ""}|${spec.messagePrefix}`;
+const storeKey = (cfg: ResolvedConfig, spec: ProgramSpec) => `${cfg.source}|${cfg.entryId ?? ""}|${spec.messagePrefix}`;
 
 /** The page-wide store. */
 export const serviceStore = new ServiceStore();

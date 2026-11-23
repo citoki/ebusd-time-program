@@ -1,12 +1,11 @@
 import { MAX_SLOTS } from "./programs.js";
-import { isOnGrid, isOnStep, roundToStep, toMinutes } from "./time.js";
+import { isOnStep, roundToStep, toMinutes } from "./time.js";
 import type { Day, ProgramSpec, Slot } from "./types.js";
 
 export type IssueLevel = "error" | "warning" | "info";
 
 export type IssueCode =
   | "invalid_time" // not HH:MM / out of 00:00..24:00
-  | "off_grid" // not on the 10-minute grid
   | "start_24" // 24:00 is only allowed as end
   | "end_before_start"
   | "overlap"
@@ -34,6 +33,9 @@ export const hasErrors = (issues: readonly Issue[]): boolean =>
  * Validate the slots of one day for a program. Slots may be in any order;
  * overlap is detected on start-sorted order and reported on the later slot.
  * Indexes in the result refer to the input array.
+ * Times off the 10-minute grid (e.g. 17:22, written directly via eBUS on a
+ * controller that stores single minutes) are valid: the card shows and keeps
+ * them; only editing a time snaps it to the grid.
  */
 export function validateDay(slots: readonly Slot[], spec: ProgramSpec): Issue[] {
   const issues: Issue[] = [];
@@ -105,10 +107,6 @@ function checkTime(
   const minutes = toMinutes(value);
   if (minutes === null) {
     issues.push({ level: "error", code: "invalid_time", slot, field, params: { value } });
-    return null;
-  }
-  if (!isOnGrid(minutes)) {
-    issues.push({ level: "error", code: "off_grid", slot, field, params: { value } });
     return null;
   }
   return minutes;

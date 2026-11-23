@@ -18,7 +18,7 @@ frame.
 
 The bars at the top switch:
 
-- **Language**, **card theme** (`brand` / `default`) and a dark or light **HA theme**
+- **Language**, **card theme** (`vaillant` / `saunier-duval` / `default`) and a dark or light **HA theme**
 - **Sensor states**: normal, ebusd just started, ebusd offline, entities missing …
 
 More settings are URL parameters, listed at the top of `dev/main.ts`:

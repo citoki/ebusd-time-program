@@ -7,6 +7,7 @@ export interface BusyPanelProps {
   job: JobSnapshot;
   programName: string;
   verifyTimeoutS: number;
+  serviceLabel?: string | undefined;
   onCancel: () => void;
   onRetry: () => void;
   onRestore: () => void;
@@ -24,7 +25,7 @@ const ICON: Record<JobItem["state"], string> = {
 
 const short = (days: readonly Day[]) => days.map((d) => UI.dayShort[d]).join(" ");
 
-export function reasonText(reason: FailReason | undefined, timeoutS: number): string {
+export function reasonText(reason: FailReason | undefined, timeoutS: number, serviceLabel?: string): string {
   if (!reason) return "";
   switch (reason.code) {
     case "count":
@@ -36,7 +37,7 @@ export function reasonText(reason: FailReason | undefined, timeoutS: number): st
     case "publish":
       return UI.reason.publish(reason.message);
     case "service":
-      return UI.reason.service(reason.message);
+      return UI.reason.service(reason.message, serviceLabel);
   }
 }
 
@@ -71,7 +72,7 @@ export function renderBusyPanel(p: BusyPanelProps): TemplateResult {
       break;
     case "failed":
       head = html`<p class="busy-title error">✗ ${UI.failedAt(failed ? UI.dayLong[failed.day] : "")}</p>
-        <p class="busy-reason">${reasonText(failed?.reason, p.verifyTimeoutS)}</p>`;
+        <p class="busy-reason">${reasonText(failed?.reason, p.verifyTimeoutS, p.serviceLabel)}</p>`;
       actions = renderEndActions(p, canRestore, UI.retry);
       break;
     case "cancelled":
@@ -90,7 +91,7 @@ export function renderBusyPanel(p: BusyPanelProps): TemplateResult {
       : nothing}
     <ul class="job-days">
       ${job.items.map(
-        (i) => html`<li class="job-day ${i.state}" title=${reasonText(i.reason, p.verifyTimeoutS) || UI.dayState[i.state]}>
+        (i) => html`<li class="job-day ${i.state}" title=${reasonText(i.reason, p.verifyTimeoutS, p.serviceLabel) || UI.dayState[i.state]}>
           <span aria-hidden="true">${ICON[i.state]}</span> ${UI.dayShort[i.day]}
           ${i.state === "writing" || i.state === "verifying"
             ? html`<span class="muted">${UI.dayState[i.state]}</span>`
