@@ -1,5 +1,5 @@
 import { hasErrors, validateDay } from "./validate.js";
-import { normalizeSlots } from "./week.js";
+import { normalizeSlots, perSlotTemp } from "./week.js";
 import type { Day, ProgramSpec, Slot } from "./types.js";
 
 const DAY_NAMES: Record<Day, string> = {
@@ -30,6 +30,14 @@ export class InvalidDayError extends Error {
 }
 
 /**
+ * Temperature field of programs with a shared temperature (HWC): `-` (0xFFFF) leaves
+ * `HwcTempDesired` as it is. Verified on a VRC 720 (ctlv2, 2026-11-22: times applied,
+ * HwcTempDesired unchanged) and on BASS3 (issue #7). Any number would become the
+ * temperature of every slot on every day.
+ */
+const KEEP_TEMP = "-";
+
+/**
  * Build the ordered `/set` payloads that rewrite one whole day.
  *
  * Verified on a VRC 720: a day is only applied when all slots `0…count-1`
@@ -47,11 +55,13 @@ export function buildDayPayloads(spec: ProgramSpec, slots: readonly Slot[]): str
     // this is exactly what the myVAILLANT app sends (traced 2026-11-05, Z1 Sunday:
     // `a6 00 00 06 00 00 0000 0000 0000`, temp 0x0000 = 0.0). The controller
     // then reads the empty slots back as `00:00;00:00;-`.
-    return [spec.temp ? "0;0;00:00;00:00;0.0" : "0;0;00:00;00:00"];
+    if (!spec.temp) return ["0;0;00:00;00:00"];
+    return [perSlotTemp(spec) ? "0;0;00:00;00:00;0.0" : `0;0;00:00;00:00;${KEEP_TEMP}`];
   }
   const count = sorted.length;
   return sorted.map((s, i) => {
     const base = `${i};${count};${s.start};${s.end}`;
-    return spec.temp ? `${base};${s.temp!.toFixed(1)}` : base;
+    if (!spec.temp) return base;
+    return `${base};${perSlotTemp(spec) ? s.temp!.toFixed(1) : KEEP_TEMP}`;
   });
 }

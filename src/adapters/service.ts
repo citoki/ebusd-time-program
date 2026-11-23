@@ -1,7 +1,7 @@
 import { isServiceSource, type ResolvedConfig, type ServiceSource } from "../config.js";
 import type { Hass } from "../hass.js";
 import { DAYS, type Day, type ProgramSpec, type Slot } from "../model/types.js";
-import { normalizeSlots } from "../model/week.js";
+import { normalizeSlots, perSlotTemp } from "../model/week.js";
 import { errorMessage } from "../write-job.js";
 import type { ProgramRead } from "./mqtt.js";
 
@@ -67,11 +67,18 @@ export function fromService(slots: readonly ServiceSlot[], spec: ProgramSpec): S
   );
 }
 
-/** The integration's slots from card slots. */
-export function toService(slots: readonly Slot[], spec: ProgramSpec): ServiceSlot[] {
-  return normalizeSlots(slots, spec).map((s) =>
-    spec.temp && s.temp !== undefined ? { start: s.start, end: s.end, temperature: s.temp } : { start: s.start, end: s.end },
-  );
+/**
+ * The integration's slots from card slots. With a shared temperature (HWC) the slots'
+ * own values are not sent: `sharedTemp` (the current one) when known, else none, and
+ * the integration keeps what the day already has. Another value would change the
+ * temperature of the whole week.
+ */
+export function toService(slots: readonly Slot[], spec: ProgramSpec, sharedTemp: number | null = null): ServiceSlot[] {
+  const own = perSlotTemp(spec);
+  return normalizeSlots(slots, spec).map((s) => {
+    const temperature = own ? s.temp : spec.temp ? (sharedTemp ?? undefined) : undefined;
+    return temperature !== undefined ? { start: s.start, end: s.end, temperature } : { start: s.start, end: s.end };
+  });
 }
 
 /** A program read from a `read_time_program` response. */
@@ -147,10 +154,17 @@ export async function readProgramService(hass: Hass, cfg: ResolvedConfig, spec: 
  * (the integration reads the day back); rejects when ebusd refused a write or the
  * controller did not store the slots.
  */
-export async function writeDayService(hass: Hass, cfg: ResolvedConfig, spec: ProgramSpec, day: Day, slots: readonly Slot[]): Promise<Slot[]> {
+export async function writeDayService(
+  hass: Hass,
+  cfg: ResolvedConfig,
+  spec: ProgramSpec,
+  day: Day,
+  slots: readonly Slot[],
+  sharedTemp: number | null = null,
+): Promise<Slot[]> {
   if (!hass.callService) throw new Error("This Home Assistant connection cannot call actions");
   const domain = serviceDomain(cfg);
-  const data = { ...baseData(cfg, spec), days: [day], slots: toService(slots, spec) };
+  const data = { ...baseData(cfg, spec), days: [day], slots: toService(slots, spec, sharedTemp) };
   const result = await hass.callService(domain, WRITE_SERVICE, data, undefined, false, true);
   const stored = responseOf<WriteResponse>(result, domain).days?.[day];
   if (!stored) throw new Error(`The action did not report ${day}`);

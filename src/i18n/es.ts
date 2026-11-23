@@ -95,6 +95,10 @@ export const es: Strings = {
   save: "Guardar",
   saveFailed: (message: string) => `No se pudo guardar: ${message}`,
   setbackReadOnly: "Se ajusta en el regulador.",
+  sharedTempTitle: "Temperatura del agua caliente",
+  sharedTempNote: "Para todas las franjas y días",
+  sharedTempHelp:
+    "El regulador tiene una sola temperatura de agua caliente para todas las franjas de todos los días. Al guardar se cambia de inmediato para toda la semana.",
   change: "Cambiar:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} sin cambios`,

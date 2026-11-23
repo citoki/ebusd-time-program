@@ -5,7 +5,7 @@ import { renderApplyBar } from "./components/apply-bar.js";
 import { renderBusyPanel } from "./components/busy-panel.js";
 import { renderDayPicker, selectionLabel } from "./components/day-picker.js";
 import { renderTabs } from "./components/program-tabs.js";
-import { renderInfoSheet, renderSheet, SETBACK_ICON, type SheetState } from "./components/sheets.js";
+import { renderInfoSheet, renderSheet, SETBACK_ICON, SHARED_TEMP_ICON, type SheetState } from "./components/sheets.js";
 import { renderSlotList, type SlotField } from "./components/slot-list.js";
 import { renderWeekPreview, uniformTemp } from "./components/week-preview.js";
 import { accentStyle, COUNT_MESSAGE_CANDIDATES, DEFAULTS, isServiceSource, resolveConfig, setbackEntityId, setbackWrite, type CardConfig, type SetbackWrite, type DefaultDays, type ResolvedConfig, type ResolvedProgram } from "./config.js";
@@ -97,7 +97,8 @@ export class EbusdTimeProgramCard extends LitElement {
   declare _job: JobSnapshot | null;
   /** One-off error shown in the apply bar (e.g. no service access). */
   declare _notice: string | null;
-  declare _infoDialog: boolean;
+  /** Open program dialog: the ⓘ info, or the shared temperature (HWC). */
+  declare _infoDialog: false | "info" | "temp";
   /** Set-back value in the info dialog (null: not known). */
   declare _setbackDraft: number | null;
   declare _setbackSaving: boolean;
@@ -427,7 +428,7 @@ export class EbusdTimeProgramCard extends LitElement {
         },
         writeDay: service
           ? async (day, slots) => {
-              const stored = await writeDayService(this._hass!, cfg, spec, day, slots);
+              const stored = await writeDayService(this._hass!, cfg, spec, day, slots, this._sharedTemp(program));
               serviceStore.setDay(cfg, spec, day, stored);
               return stored;
             }
@@ -544,7 +545,7 @@ export class EbusdTimeProgramCard extends LitElement {
     }
     const days = read?.days ?? (Object.fromEntries(DAYS.map((d) => [d, null])) as ProgramRead["days"]);
     const rows = previewRows(cfg.previewDays, dayOf(this._now));
-    const uniform = uniformTemp(days, spec, rows);
+    const uniform = spec.sharedTempMessages ? this._sharedTemp(index) : uniformTemp(days, spec, rows);
     // today when the clicked day is not on screen (e.g. after midnight in `today` mode)
     const day = [this._hover, this._detail].find((d): d is Day => d !== null && rows.includes(d)) ?? rows[0]!;
     return renderWeekPreview({
@@ -589,6 +590,11 @@ export class EbusdTimeProgramCard extends LitElement {
     // the preview shows the draft on the days it would be written to
     const previewDays: ProgramRead["days"] = { ...ctx.days };
     if (dirty) for (const d of plan.write) previewDays[d] = plan.slots;
+    // one temperature for all slots: draw every day with it (new slots carry a guess)
+    const shared = spec.sharedTempMessages ? this._sharedTemp(this._active) : null;
+    if (shared !== null) {
+      for (const d of DAYS) previewDays[d] = previewDays[d]?.map((s) => ({ ...s, temp: shared })) ?? null;
+    }
 
     return html`<div class="body layout-${cfg.layout} ${busy ? "busy" : ""}">
         <div class="area-days" ?inert=${busy}>
@@ -617,6 +623,7 @@ export class EbusdTimeProgramCard extends LitElement {
                 onAdd: this._onAdd,
                 info: infoText(spec, this._setback[this._active] ?? null),
                 onInfo: this._onInfo,
+                sharedTemp: spec.sharedTempMessages ? { value: shared, onEdit: this._onSharedTemp } : undefined,
               })
             : html`<div class="section"><p class="empty">${UI.noDaySelected}</p></div>`}
         </div>
@@ -670,13 +677,32 @@ export class EbusdTimeProgramCard extends LitElement {
     this._dismissSuccess();
     this._setbackDraft = this._setback[this._active] ?? null;
     this._setbackError = null;
-    this._infoDialog = true;
+    this._infoDialog = "info";
   };
+
+  private _onSharedTemp = () => {
+    this._dismissSuccess();
+    this._setbackDraft = this._sharedTemp(this._active);
+    this._setbackError = null;
+    this._infoDialog = "temp";
+  };
+
+  /**
+   * The one temperature of all slots (HWC): its entity (`HwcTempDesired`), else what the
+   * slots read back, as the controller mirrors it into every slot. null for other programs.
+   */
+  private _sharedTemp(index: number): number | null {
+    const spec = this._cfg?.programs[index]?.spec;
+    if (!spec?.sharedTempMessages) return null;
+    const days = this._reads[index]?.days;
+    return this._setback[index] ?? (days ? uniformTemp(days, spec) : null);
+  }
 
   private _onInfoClosed = () => {
     this._infoDialog = false;
   };
 
+  /** Saves the zone's set-back or the shared HWC temperature right away (not part of Apply). */
   private _onSetbackSave = async () => {
     const cfg = this._cfg;
     const hass = this._hass;
@@ -701,16 +727,19 @@ export class EbusdTimeProgramCard extends LitElement {
     const program = cfg.programs[this._active]!;
     const { spec } = program;
     const onClosed = this._onInfoClosed;
-    if (!spec.setbackMessages || !spec.temp) return renderInfoSheet({ title: UI.info, text: infoText(spec, null), onClosed });
-    const current = this._setback[this._active] ?? null;
+    const shared = this._infoDialog === "temp" && !!spec.sharedTempMessages;
+    if ((!spec.setbackMessages && !shared) || !spec.temp) {
+      return renderInfoSheet({ title: UI.info, text: infoText(spec, null), onClosed });
+    }
+    const current = shared ? this._sharedTemp(this._active) : (this._setback[this._active] ?? null);
     const target = this._setbackTargets[this._active];
     const writable = !!this._hass?.callService && !!target?.write;
     const ownIcon = target?.entity ? this._hass?.states[target.entity]?.attributes.icon : undefined;
     return renderInfoSheet({
-      title: `${UI.setbackTitle} · ${programName(program)}`,
-      // the entity's own icon if it has one, else the night icon
-      icon: typeof ownIcon === "string" && ownIcon ? ownIcon : SETBACK_ICON,
-      text: infoText(spec, null),
+      title: shared ? UI.sharedTempTitle : `${UI.setbackTitle} · ${programName(program)}`,
+      // the entity's own icon if it has one, else the night / water-thermometer icon
+      icon: typeof ownIcon === "string" && ownIcon ? ownIcon : shared ? SHARED_TEMP_ICON : SETBACK_ICON,
+      text: shared ? UI.sharedTempHelp : infoText(spec, null),
       setback: {
         spec,
         range: spec.temp,

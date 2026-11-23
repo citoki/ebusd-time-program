@@ -35,16 +35,27 @@ describe("config", () => {
     expect(write(c, 0, { "sensor.ebusd_ctlv2_z1nighttemp": {} })).toEqual({ kind: "mqtt", topic: "ebusd/ctlv2/Z1NightTemp/set" });
     expect(write(resolveConfig({ type: "x", setback_entity: "sensor.my_setback" }), 0, {})).toBeNull();
     expect(write(resolveConfig({ type: "x", setback_entity: "input_number.setback" }), 0, {})).toEqual({ kind: "service", domain: "input_number", entity: "input_number.setback" });
-    expect(write(c, 1, {})).toBeNull(); // HWC
+    expect(write(c, 2, {})).toBeNull(); // CC
   });
 
-  it("set-back entity per zone; none for HWC and CC", () => {
+  it("HWC: the shared temperature HwcTempDesired, written like a set-back (issue #7)", () => {
+    const c = resolveConfig({ type: "x", programs: ["hwc"] });
+    const hwc = c.programs[0]!;
+    expect(setbackEntityId(c, hwc, {})).toBe("sensor.ebusd_ctlv2_hwctempdesired");
+    expect(setbackEntityId(c, hwc, { "number.ebusd_ctlv2_hwctempdesired": {} })).toBe("number.ebusd_ctlv2_hwctempdesired");
+    expect(setbackWrite(c, hwc, "sensor.ebusd_ctlv2_hwctempdesired")).toEqual({ kind: "mqtt", topic: "ebusd/ctlv2/HwcTempDesired/set" });
+    expect(setbackWrite(c, hwc, "number.ebusd_ctlv2_hwctempdesired")).toEqual({ kind: "service", domain: "number", entity: "number.ebusd_ctlv2_hwctempdesired" });
+    const own = resolveConfig({ type: "x", programs: [{ id: "hwc", temp_entity: "number.my_dhw" }], setback_entity: "sensor.z1" });
+    expect(setbackEntityId(own, own.programs[0]!)).toBe("number.my_dhw");
+  });
+
+  it("set-back entity per zone; HWC its shared temperature; none for CC", () => {
     const c = resolveConfig({ type: "x", programs: ["z1", { id: "z2", setback_entity: "sensor.z2_setback" }, "z3", "hwc", "cc"], setback_entity: "sensor.z1_setback" });
     expect(c.programs.map((p) => setbackEntityId(c, p))).toEqual([
       "sensor.z1_setback",
       "sensor.z2_setback",
       "sensor.ebusd_ctlv2_z3setbacktemp",
-      null,
+      "sensor.ebusd_ctlv2_hwctempdesired",
       null,
     ]);
     expect(c.programs.map((p) => programName(p))).toEqual(["Zone 1", "Zone 2", "Zone 3", "Hot water", "Circulation"]);

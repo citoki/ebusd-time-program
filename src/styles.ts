@@ -352,6 +352,25 @@ export const cardStyles = css`
   .slots {
     margin-top: 8px;
   }
+  /* one temperature for all slots and days (HWC), above the slot table */
+  .shared-temp {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 4px 0 4px 8px;
+    border-bottom: 1px solid var(--etp-divider);
+  }
+  .shared-temp-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .shared-temp-note {
+    font-size: 0.8rem;
+    color: var(--etp-muted);
+  }
   .slot-row,
   .slot-head {
     display: grid;

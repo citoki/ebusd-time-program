@@ -47,4 +47,10 @@ export interface ProgramSpec {
    * Upstream ebusd-configuration names it `Z1SetbackTemp`, older configs `Z1NightTemp`.
    */
   setbackMessages?: readonly string[];
+  /**
+   * The program has one temperature for all slots and days instead of one per slot
+   * (HWC: `HwcTempDesired`, first found wins). The slots then only mirror it: writing
+   * a slot with another temperature changes it for the whole week (issue #7).
+   */
+  sharedTempMessages?: readonly string[];
 }

@@ -74,6 +74,19 @@ await check("info dialog of hot water: text only, Escape closes", "tab=1", async
   await dialog.waitFor({ state: "detached" });
 });
 
+await check("hot water: one temperature above the slots, saved right away (issue #7)", "tab=1&delay=0", async (card) => {
+  expectEqual(await card.locator(".slot-row .field.pill").count(), 0, "temperature per slot");
+  const pill = card.locator(".shared-temp .field.pill");
+  expectEqual(await text(pill), "50.0 °C", "shared temperature before");
+  await pill.click();
+  const dialog = card.locator("dialog[open]");
+  await dialog.locator(".round-btn").nth(1).click(); // +0.5 °C
+  await dialog.locator(".btn.primary").click(); // Save
+  await dialog.waitFor({ state: "detached" });
+  await card.locator(".shared-temp .field.pill", { hasText: "50.5 °C" }).waitFor({ timeout: 5_000 });
+  expectEqual(await card.locator(".apply-bar").count(), 0, "no unsaved draft");
+});
+
 await check("preview: today and tomorrow, stacked, without label line", "mode=preview&stacked=1&range=today_tomorrow&nolabel=1", async (card) => {
   expectEqual(await card.locator(".week-day").count(), 6, "rows (3 programs × 2 days)");
   expectEqual(await card.locator(".detail").count(), 0, "label lines");

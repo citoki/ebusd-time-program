@@ -95,6 +95,10 @@ export const da: Strings = {
   save: "Gem",
   saveFailed: (message: string) => `Kunne ikke gemme: ${message}`,
   setbackReadOnly: "Indstilles på regulatoren.",
+  sharedTempTitle: "Varmtvandstemperatur",
+  sharedTempNote: "For alle perioder og dage",
+  sharedTempHelp:
+    "Regulatoren har én varmtvandstemperatur for alle perioder på alle dage. Gem ændrer den med det samme for hele ugen.",
   change: "Ændring:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} uændret`,

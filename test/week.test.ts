@@ -78,6 +78,12 @@ describe("normalizeSlots / sameSlots", () => {
     expect(sameSlots(workday, weekendDay, z1)).toBe(false);
     expect(sameSlots(workday, [{ ...workday[0]!, temp: 24.5 }, workday[1]!], z1)).toBe(false);
   });
+  it("HWC compares times only: the slots mirror the one shared temperature (issue #7)", () => {
+    const hwc = PROGRAMS.hwc;
+    expect(sameSlots([{ start: "06:00", end: "07:00", temp: 50 }], [{ start: "06:00", end: "07:00", temp: 55 }], hwc)).toBe(true);
+    expect(sameSlots([{ start: "06:00", end: "07:00", temp: 50 }], [{ start: "06:00", end: "07:00" }], hwc)).toBe(true);
+    expect(sameSlots([{ start: "06:00", end: "07:00", temp: 50 }], [{ start: "06:00", end: "07:10", temp: 50 }], hwc)).toBe(false);
+  });
 });
 
 describe("draftForSelection", () => {

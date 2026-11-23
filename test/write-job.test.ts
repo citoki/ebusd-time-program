@@ -9,7 +9,7 @@ import { FakeEbusd, type FakeOptions } from "./fake-ebusd.js";
 import { sampleStates } from "./fixtures/hass-states.js";
 
 const cfg = resolveConfig({ type: "x" });
-const { z1, cc } = PROGRAMS;
+const { z1, cc, hwc } = PROGRAMS;
 
 const newDay: Slot[] = [
   { start: "05:30", end: "08:00", temp: 21 },
@@ -51,6 +51,39 @@ function setup(spec: ProgramSpec, days: Day[], slots: Slot[], fake: FakeOptions 
   );
   return { ebusd, job, snapshots, hass: () => hass, before };
 }
+
+describe("WriteJob – HWC with one shared temperature (issue #7)", () => {
+  it("two slots with different temperatures: written with '-', verified on times, HwcTempDesired untouched", async () => {
+    const slots: Slot[] = [
+      { start: "13:00", end: "14:00", temp: 50 },
+      { start: "15:00", end: "16:00", temp: 55 },
+    ];
+    const { ebusd, job } = setup(hwc, ["monday", "tuesday"], slots);
+    const result = await job.run();
+    expect(result.status).toBe("done");
+    const sets = ebusd.log.filter((m) => m.topic.endsWith("/set")).map((m) => m.payload);
+    expect(sets).toEqual(["0;2;13:00;14:00;-", "1;2;15:00;16:00;-", "0;2;13:00;14:00;-", "1;2;15:00;16:00;-"]);
+    expect(ebusd.sharedTemp(hwc)).toBe(50);
+    expect(ebusd.controllerDay(hwc, "saturday")).toEqual([{ start: "07:00", end: "09:00", temp: 50 }]);
+  });
+
+  it("the fake reproduces the controller: a number in one slot changes every slot of every day", () => {
+    const ebusd = new FakeEbusd(cfg, sampleStates());
+    void ebusd.publish("ebusd/ctlv2/HwcTimer_Monday/set", "0;1;13:00;14:00;55.0");
+    return new Promise<void>((r) => setTimeout(r, 10)).then(() => {
+      expect(ebusd.controllerDay(hwc, "saturday")).toEqual([{ start: "07:00", end: "09:00", temp: 55 }]);
+    });
+  });
+
+  it("a read-back mismatch names times only", () => {
+    expect(mismatch([{ start: "13:00", end: "14:00", temp: 55 }], [{ start: "13:00", end: "14:10", temp: 50 }], hwc)).toEqual({
+      code: "slot",
+      index: 0,
+      actual: "13:00–14:00",
+      expected: "13:00–14:10",
+    });
+  });
+});
 
 describe("WriteJob", () => {
   it("writes each day in order, verifies the read-back and ends done", async () => {

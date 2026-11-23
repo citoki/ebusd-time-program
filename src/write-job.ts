@@ -2,7 +2,7 @@ import { formatTemp } from "./i18n/format.js";
 import { topic, type ResolvedConfig } from "./config.js";
 import { buildDayPayloads, readMessage, writeMessage } from "./model/payload.js";
 import type { Day, ProgramSpec, Slot } from "./model/types.js";
-import { normalizeSlots, sameSlots } from "./model/week.js";
+import { normalizeSlots, perSlotTemp, sameSlots } from "./model/week.js";
 
 /**
  * Sequential writer: one day after the other, all slots of a
@@ -143,7 +143,7 @@ export class WriteJob {
       }
       const now = this.deps.now();
       if (now - start >= timeout) {
-        this.setItem(i, { state: "failed", reason: mismatch(actual, item.slots) });
+        this.setItem(i, { state: "failed", reason: mismatch(actual, item.slots, spec) });
         return false;
       }
       if (now - lastRequest >= rerequest) {
@@ -169,7 +169,7 @@ export class WriteJob {
       this.setItem(i, { state: "done" });
       return true;
     }
-    this.setItem(i, { state: "failed", reason: mismatch(stored, item.slots) });
+    this.setItem(i, { state: "failed", reason: mismatch(stored, item.slots, this.opts.spec) });
     return false;
   }
 
@@ -209,15 +209,17 @@ export function errorMessage(e: unknown): string {
 const range = (s: Slot) => `${s.start}–${s.end}${s.temp !== undefined ? ` ${formatTemp(s.temp)} °C` : ""}`;
 
 /** Describe why the read-back does not match (first difference). */
-export function mismatch(actual: Slot[] | null, expected: readonly Slot[]): FailReason {
+export function mismatch(actual: Slot[] | null, expected: readonly Slot[], spec?: ProgramSpec): FailReason {
   if (actual === null) return { code: "timeout" };
   if (actual.length !== expected.length) return { code: "count", actual: actual.length, expected: expected.length };
   const a = [...actual].sort((x, y) => x.start.localeCompare(y.start));
   for (let i = 0; i < expected.length; i++) {
     const e = expected[i]!;
     const got = a[i]!;
-    if (got.start !== e.start || got.end !== e.end || got.temp !== e.temp) {
-      return { code: "slot", index: i, actual: range(got), expected: range(e) };
+    const temps = spec === undefined || perSlotTemp(spec);
+    if (got.start !== e.start || got.end !== e.end || (temps && got.temp !== e.temp)) {
+      const show = (s: Slot) => (temps ? range(s) : `${s.start}–${s.end}`);
+      return { code: "slot", index: i, actual: show(got), expected: show(e) };
     }
   }
   return { code: "timeout" };

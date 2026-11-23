@@ -95,6 +95,10 @@ export const sv: Strings = {
   save: "Spara",
   saveFailed: (message: string) => `Kunde inte spara: ${message}`,
   setbackReadOnly: "Ställs in på regulatorn.",
+  sharedTempTitle: "Varmvattentemperatur",
+  sharedTempNote: "För alla perioder och dagar",
+  sharedTempHelp:
+    "Regulatorn har en varmvattentemperatur för alla perioder alla dagar. Spara ändrar den direkt för hela veckan.",
   change: "Ändra:",
   dayCount: days,
   unchangedDays: (d: string) => `${d} oförändrade`,
