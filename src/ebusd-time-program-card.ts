@@ -121,6 +121,11 @@ export class EbusdTimeProgramCard extends LitElement {
   /** Resolvers of the running job waiting for the next hass update. */
   private _waiters: (() => void)[] = [];
   private _successTimer: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * "Restore previous" values of a failed/cancelled job the user dismissed by editing on,
+   * so the next Apply can still restore what the controller had before the first attempt.
+   */
+  private _keptPrevious: { program: number; previous: JobSnapshot["previous"] } | null = null;
   private _clock: ReturnType<typeof setInterval> | undefined;
   /** Service sources (`vaillant_ebus`, `arotherm_genia_ebusd`): unsubscribe from the shared program reads. */
   private _unsubscribe: (() => void) | undefined;
@@ -157,6 +162,7 @@ export class EbusdTimeProgramCard extends LitElement {
     this._drafts = [];
     this._sheet = null;
     this._job = null;
+    this._keptPrevious = null;
     this._fingerprint = "";
     this._loadService();
     this._refresh();
@@ -297,8 +303,24 @@ export class EbusdTimeProgramCard extends LitElement {
     if (this._job?.status === "done") this._job = null;
   }
 
+  /**
+   * Editing on after a failed/cancelled write starts a new draft: the old job's Retry
+   * would replay the old slots (issue #8), so its panel gives way to the Apply bar.
+   * Its "Restore previous" values are kept for the next Apply.
+   */
+  private _dismissJob(): void {
+    const job = this._job;
+    if (job?.status === "failed" || job?.status === "cancelled") {
+      const kept = this._keptPrevious?.program === job.program ? this._keptPrevious.previous : {};
+      this._keptPrevious = { program: job.program, previous: { ...job.previous, ...kept } };
+      this._job = null;
+    } else {
+      this._dismissSuccess();
+    }
+  }
+
   private _setDraft(slots: Slot[] | undefined): void {
-    this._dismissSuccess();
+    this._dismissJob();
     const drafts = [...this._drafts];
     // editing back to exactly the controller values is not a draft any more
     if (slots !== undefined && this._cfg) {
@@ -311,7 +333,7 @@ export class EbusdTimeProgramCard extends LitElement {
   }
 
   private _setSelection(days: Day[]): void {
-    this._dismissSuccess();
+    this._dismissJob();
     this._selected = orderDays(days);
     this._source = undefined;
   }
@@ -370,6 +392,7 @@ export class EbusdTimeProgramCard extends LitElement {
   };
 
   private _onDiscard = () => {
+    this._keptPrevious = null;
     this._source = undefined;
     this._setDraft(undefined);
   };
@@ -381,7 +404,10 @@ export class EbusdTimeProgramCard extends LitElement {
     if (!cfg || this._busy) return;
     const { plan, errors, week } = this._context(cfg);
     if (errors.length || plan.write.length === 0) return;
-    const previous = Object.fromEntries(plan.write.map((d) => [d, week[d]]));
+    // days a dismissed failed job may have touched: restore to what was there before it
+    const kept = this._keptPrevious?.program === this._active ? this._keptPrevious.previous : {};
+    this._keptPrevious = null;
+    const previous = Object.fromEntries(plan.write.map((d) => [d, kept[d] ?? week[d]]));
     void this._startJob("apply", plan.write.map((day) => ({ day, slots: plan.slots })), previous);
   };
 
@@ -784,7 +810,7 @@ export class EbusdTimeProgramCard extends LitElement {
       return html`<div class="banner info">✓ ${UI.sameProgram(selectionLabel(this._selected))}</div>`;
     }
     const onChange = (e: Event) => {
-      this._dismissSuccess();
+      this._dismissJob();
       this._source = (e.target as HTMLSelectElement).value as Day;
     };
     return html`<div class="banner" role="status">

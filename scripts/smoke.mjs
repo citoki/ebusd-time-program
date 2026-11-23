@@ -125,6 +125,29 @@ await check("source vaillant_ebus: a day the controller ignores stops the write"
   if (!panel.includes("did not store")) throw new Error(`failure should name the reason: ${panel}`);
 });
 
+await check("editing after a failed write: Apply sends the new draft, Restore the original (issue #8)", "delay=0&timeout=2&days=monday&ignore=Z1Timer_Monday", async (card, page) => {
+  const sent = [];
+  page.on("console", (m) => m.text().startsWith("mqtt.publish ebusd/ctlv2/Z1Timer_Monday/set") && sent.push(m.text().split("← ")[1]));
+  const bumpFirstTemp = async () => {
+    await card.locator(".field.pill").first().click();
+    const sheet = card.locator("dialog[open]");
+    await sheet.locator(".round-btn").nth(1).click(); // +0.5 °C
+    await sheet.locator(".btn.primary").click(); // Done
+  };
+  await bumpFirstTemp(); // 21.5
+  await card.locator(".apply-bar .btn.primary").click();
+  await card.locator(".busy-panel.failed").waitFor({ timeout: 15_000 });
+  await bumpFirstTemp(); // 22.0, while the error panel is open
+  expectEqual(await card.locator(".busy-panel").count(), 0, "failed panel after editing");
+  await card.locator(".apply-bar .btn.primary").click();
+  await card.locator(".busy-panel.failed").waitFor({ timeout: 15_000 });
+  expectEqual(sent.at(-2), "0;2;06:00;08:00;22.0", "second write uses the new draft");
+  await card.locator(".busy-panel .btn", { hasText: "Restore previous" }).click();
+  // the controller never took the writes, so it still matches the restored values
+  await card.locator(".busy-panel.done").waitFor({ timeout: 15_000 });
+  expectEqual(sent.at(-2), "0;2;06:00;08:00;21.0", "restore writes the values from before the first attempt");
+});
+
 await check("source arotherm_genia_ebusd: read and write circulation through CirculationTimer", "source=arotherm_genia_ebusd&tab=2&delay=0", async (card) => {
   await card.locator(".slot-row").first().waitFor();
   expectEqual(await card.locator(".slot-row").count(), 2, "CC slots Mo–Fr");
