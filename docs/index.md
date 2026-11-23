@@ -19,7 +19,7 @@ checks each day against what the controller reports back.
 - **Week preview** with a marker for the current time, and a read-only [preview mode](usage.md#preview-mode)
 - **Status at a glance**: connected, waiting for values, ebusd offline, entities not found
 - **14 [languages](languages.md)**, following the Home Assistant user's language
-- **Two looks**: the card's own dark design, or your Home Assistant theme
+- **Three looks**: the card's own dark design, a light Saunier Duval design, or your Home Assistant theme
 
 ## Installation
 

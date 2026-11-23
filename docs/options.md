@@ -21,7 +21,7 @@ type: custom:ebusd-time-program-card
 | `default_days` | Days selected when the card opens: `weekdays`, `weekend`, `all` or `today` | `weekdays` |
 | `show_preview` | Show the week preview in edit mode | `true` |
 | `layout` | `auto`: two columns from a card width of 720 px; `wide` or `narrow` force one | `auto` |
-| `theme` | `brand`: the card's own dark design; `default`: your Home Assistant theme with its primary and accent colour | `brand` |
+| `theme` | `vaillant`: the card's own dark design; `saunier-duval`: light design in Saunier Duval red; `default`: your Home Assistant theme with its primary and accent colour | `vaillant` |
 | `accent` | Any CSS colour to replace the accent colour, e.g. `"#e07a1f"` | theme's |
 | `language` | Card language, e.g. `de` or `en-GB`, see [languages](languages.md) | Home Assistant user's language |
 

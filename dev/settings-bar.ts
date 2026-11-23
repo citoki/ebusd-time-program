@@ -67,9 +67,10 @@ export function mountSettingsBar(config: CardConfig, reconfigure: () => void): v
     {
       label: "Card theme",
       param: "theme",
-      fallback: "brand",
+      fallback: "vaillant",
       options: [
-        ["brand", "brand"],
+        ["vaillant", "vaillant"],
+        ["saunier-duval", "saunier-duval"],
         ["default", "default (HA theme)"],
       ],
       apply: (v) => {

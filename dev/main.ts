@@ -21,7 +21,7 @@ import { applyHaTheme, mountSettingsBar } from "./settings-bar.js";
 //   labels=always|never  temperatures inside the bars (preview mode, default auto)
 //   range=today|today_tomorrow  preview rows (default week)   nolabel=1  hide the detail line
 //   layout=wide|narrow   force a layout (default auto)
-//   theme=default        HA theme instead of the brand look; ha=light fakes a light HA theme
+//   theme=default        HA theme instead of the vaillant look; theme=saunier-duval light red look; ha=light fakes a light HA theme
 //   (lang, theme and ha can also be switched with the selectors at the top of the page)
 const params = new URLSearchParams(location.search);
 

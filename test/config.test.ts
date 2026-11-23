@@ -50,8 +50,10 @@ describe("config", () => {
     expect(c.programs.map((p) => programName(p))).toEqual(["Zone 1", "Zone 2", "Zone 3", "Hot water", "Circulation"]);
   });
 
-  it("theme: brand by default, HA theme on request; accent overrides the colour", () => {
-    expect(cfg.theme).toBe("brand");
+  it("theme: vaillant by default, saunier-duval or HA theme on request; accent overrides the colour", () => {
+    expect(cfg.theme).toBe("vaillant");
+    expect(resolveConfig({ type: "x", theme: "saunier-duval" }).theme).toBe("saunier-duval");
+    expect(resolveConfig({ type: "x", theme: "brand" as never }).theme).toBe("vaillant");
     expect(resolveConfig({ type: "x", theme: "default" }).theme).toBe("default");
     expect(() => resolveConfig({ type: "x", theme: "dark" as never })).toThrow('Unknown theme "dark"');
     expect(accentStyle(cfg)).toBe("");

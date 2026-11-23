@@ -96,7 +96,7 @@ That is enough for a standard ebusd setup with zone 1, hot water and circulation
 | `default_days` | `weekdays` | Days selected on open: `weekdays`, `weekend`, `all`, `today` |
 | `show_preview` | `true` | Week preview below the editor |
 | `layout` | `auto` | Two columns from 720 px card width; `wide` / `narrow` force one |
-| `theme` | `brand` | `brand`: the card's dark design; `default`: your Home Assistant theme |
+| `theme` | `vaillant` | `vaillant`: the card's dark design; `saunier-duval`: light design in Saunier Duval red; `default`: your Home Assistant theme |
 | `accent` | | CSS colour for the accent, e.g. `"#e07a1f"` |
 | `language` | HA user's | e.g. `de`, `en-GB` |
 | `mqtt_prefix` | `ebusd` | ebusd's MQTT topic prefix |

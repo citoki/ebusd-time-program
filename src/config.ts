@@ -3,8 +3,10 @@ import type { ProgramId, ProgramSpec } from "./model/types.js";
 import { PREVIEW_DAYS, type PreviewDays } from "./model/week.js";
 
 export type DefaultDays = "all" | "weekdays" | "weekend" | "today";
-export type CardTheme = "brand" | "default";
-export const THEMES: readonly CardTheme[] = ["brand", "default"];
+export type CardTheme = "vaillant" | "saunier-duval" | "default";
+export const THEMES: readonly CardTheme[] = ["vaillant", "saunier-duval", "default"];
+/** Old theme names still accepted in existing configs. */
+const THEME_ALIASES: Readonly<Record<string, CardTheme>> = { brand: "vaillant" };
 export type CardLayout = "auto" | "wide" | "narrow";
 export const LAYOUTS: readonly CardLayout[] = ["auto", "wide", "narrow"];
 export type CardMode = "edit" | "preview";
@@ -54,7 +56,8 @@ export interface CardConfig {
   default_days?: DefaultDays;
   show_preview?: boolean;
   /**
-   * `brand` (default): the card's own dark look, teal accent, red heating times.
+   * `vaillant` (default): the card's own dark look, teal accent, red heating times.
+   * `saunier-duval`: light look in Saunier Duval red, as in the MiGo Link app.
    * `default`: the HA theme, with its primary and accent colour.
    */
   theme?: CardTheme;
@@ -142,7 +145,7 @@ export function resolveConfig(config: CardConfig): ResolvedConfig {
   if (!Array.isArray(entries) || entries.length === 0) {
     throw new ConfigError("`programs` must be a non-empty list");
   }
-  const theme = config.theme ?? "brand";
+  const theme = THEME_ALIASES[config.theme as string] ?? config.theme ?? "vaillant";
   if (!THEMES.includes(theme)) {
     throw new ConfigError(`Unknown theme "${String(theme)}" (supported: ${THEMES.join(", ")})`);
   }

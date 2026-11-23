@@ -23,7 +23,7 @@ const wideLayout = (b: string) =>
   `);
 
 export const cardStyles = css`
-  /* theme: brand (default) - the card's own dark look, independent of the HA theme */
+  /* theme: vaillant (default) - the card's own dark look, independent of the HA theme */
   :host {
     --etp-accent: #3fa38f;
     --etp-on-accent: #fff;
@@ -42,6 +42,29 @@ export const cardStyles = css`
     --etp-warn: #e8711c;
     --etp-error: #db4437;
     display: block;
+  }
+  /* theme: saunier-duval - light look in Saunier Duval red, colours from the MiGo Link app */
+  :host([data-theme="saunier-duval"]) {
+    --etp-accent: #cc0033;
+    --etp-on-accent: #fff;
+    --etp-heat: #cc0033;
+    --etp-heat-text: #fff;
+    --etp-surface: #fff;
+    --etp-surface-2: #efeff4;
+    --etp-text: #000;
+    --etp-muted: #666;
+    --etp-divider: #dfdfdf;
+    --etp-temp-cold: #4f8bd6;
+    --etp-temp-mid: #dda21d;
+    --etp-temp-warm: #cc0033;
+    --etp-ok: #43a047;
+    --etp-busy: #dda21d;
+    --etp-warn: #e8711c;
+    --etp-error: #db4437;
+    /* unselected days dark red with white text, the add button on light pink */
+    --etp-chip-bg: #971b2f;
+    --etp-chip-text: #fff;
+    --etp-add-bg: #fbeaef;
   }
   /* theme: default - follow the HA theme: primary colour as accent, accent colour for heating times */
   :host([data-theme="default"]) {
@@ -241,8 +264,8 @@ export const cardStyles = css`
     justify-self: center;
     border-radius: 999px;
     border: 1px solid transparent;
-    background: var(--etp-surface-2);
-    color: var(--etp-muted);
+    background: var(--etp-chip-bg, var(--etp-surface-2));
+    color: var(--etp-chip-text, var(--etp-muted));
     font-size: 0.85rem;
     font-weight: 500;
     padding: 0;
@@ -453,7 +476,7 @@ export const cardStyles = css`
     padding: 6px 16px 6px 12px;
     border: 1px dashed var(--etp-divider);
     border-radius: 999px;
-    background: none;
+    background: var(--etp-add-bg, none);
     color: var(--etp-accent);
     font-weight: 500;
   }

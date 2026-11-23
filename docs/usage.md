@@ -112,10 +112,15 @@ The rows move on at midnight. Without the label line, the times are only visible
 On wide dashboards (card width from 720 px) the card uses two columns, on phones one. Force either with
 `layout: wide` or `layout: narrow`.
 
-`theme: brand` (default) is the card's own dark design with teal accents and red heating times.
+`theme: vaillant` (default) is the card's own dark design with teal accents and red heating times.
+`theme: saunier-duval` is a light design in Saunier Duval red.
 `theme: default` follows your Home Assistant theme and uses its primary and accent colours. Any accent colour can
 be set with `accent`.
 
 | `layout: narrow` | `theme: default` with a light Home Assistant theme |
 |---|---|
 | ![Narrow layout](assets/edit-narrow.webp){ .shot } | ![Home Assistant theme](assets/theme-default.webp){ .shot } |
+
+`theme: saunier-duval`
+
+![Saunier Duval theme](assets/theme-saunier-duval.webp){ .shot }

@@ -222,7 +222,7 @@ export class EbusdTimeProgramCard extends LitElement {
       programs: [...DEFAULTS.programs],
       default_days: "weekdays",
       mode: "edit",
-      theme: "brand",
+      theme: "vaillant",
       layout: "auto",
     };
   }
