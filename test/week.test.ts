@@ -13,6 +13,7 @@ import {
   sameSlots,
   slotDeltas,
   toggleDay,
+  togglePreset,
 } from "../src/model/week.js";
 
 const emptyWeek = (): Week => Object.fromEntries(DAYS.map((d) => [d, []])) as unknown as Week;
@@ -50,6 +51,13 @@ describe("day selection", () => {
   it("toggles a day", () => {
     expect(toggleDay(["monday"], "sunday")).toEqual(["monday", "sunday"]);
     expect(toggleDay(["monday", "sunday"], "monday")).toEqual(["sunday"]);
+  });
+  it("selects a preset, and clears the selection when it is already active", () => {
+    expect(togglePreset(["monday"], "weekend")).toEqual(["saturday", "sunday"]);
+    expect(togglePreset(["saturday", "sunday"], "weekdays")).toEqual([...PRESETS.weekdays]);
+    expect(togglePreset(["sunday", "saturday"], "weekend")).toEqual([]);
+    expect(togglePreset([...PRESETS.all], "all")).toEqual([]);
+    expect(togglePreset([...PRESETS.all], "weekdays")).toEqual([...PRESETS.weekdays]);
   });
 });
 

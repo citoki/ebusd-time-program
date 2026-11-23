@@ -43,6 +43,14 @@ export function presetOf(days: readonly Day[]): Preset | null {
   return null;
 }
 
+/**
+ * Selection after tapping a preset: its days, or no days when it is already
+ * the active preset (so a single day can be picked next).
+ */
+export function togglePreset(days: readonly Day[], preset: Preset): Day[] {
+  return presetOf(days) === preset ? [] : [...PRESETS[preset]];
+}
+
 export function toggleDay(days: readonly Day[], day: Day): Day[] {
   return days.includes(day) ? orderDays(days.filter((d) => d !== day)) : orderDays([...days, day]);
 }

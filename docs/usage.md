@@ -5,7 +5,8 @@
 The tabs at the top switch between the programs (zone 1, hot water, circulation …). A dot on a tab marks unsaved
 changes. Each program keeps its own changes until you apply or discard them.
 
-Below the tabs you select the days to edit: tap single days, or use **All**, **Mo–Fr** and **Sa–Su**. Which days
+Below the tabs you select the days to edit: tap single days, or use **All**, **Mo–Fr** and **Sa–Su**. Tapping the active
+preset again clears the selection, so you can pick a single day next. Which days
 are selected when the card opens is set with [`default_days`](options.md).
 
 If all selected days have the same program, the card says so and shows it. If they differ, it tells you and shows
