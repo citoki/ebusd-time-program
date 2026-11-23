@@ -61,9 +61,7 @@ export const cardStyles = css`
     --etp-busy: #dda21d;
     --etp-warn: #e8711c;
     --etp-error: #db4437;
-    /* unselected days dark red with white text, the add button on light pink */
-    --etp-chip-bg: #971b2f;
-    --etp-chip-text: #fff;
+    /* the add button on light pink */
     --etp-add-bg: #fbeaef;
   }
   /* theme: default - follow the HA theme: primary colour as accent, accent colour for heating times */
@@ -264,8 +262,8 @@ export const cardStyles = css`
     justify-self: center;
     border-radius: 999px;
     border: 1px solid transparent;
-    background: var(--etp-chip-bg, var(--etp-surface-2));
-    color: var(--etp-chip-text, var(--etp-muted));
+    background: var(--etp-surface-2);
+    color: var(--etp-muted);
     font-size: 0.85rem;
     font-weight: 500;
     padding: 0;
