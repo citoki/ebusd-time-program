@@ -24,6 +24,7 @@ import {
   slotDeltas,
   PRESETS,
   toggleDay,
+  togglePreset,
   type Preset,
   type SelectionDraft,
   type WritePlan,
@@ -317,7 +318,7 @@ export class EbusdTimeProgramCard extends LitElement {
   }
 
   private _onToggle = (day: Day) => this._setSelection(toggleDay(this._selected, day));
-  private _onPreset = (preset: Preset) => this._setSelection([...PRESETS[preset]]);
+  private _onPreset = (preset: Preset) => this._setSelection(togglePreset(this._selected, preset));
   private _onPreviewDay = (day: Day) => this._setSelection([day]);
   private _onTab = (index: number) => {
     this._active = index;
