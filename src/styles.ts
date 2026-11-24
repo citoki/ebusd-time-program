@@ -229,10 +229,9 @@ export const cardStyles = css`
   .section {
     padding: 12px 16px;
   }
-  /* locked while writing; the areas are also inert */
+  /* locked while writing; the areas are also inert (the preview stays clear: it shows the days as they are written) */
   .body.busy .area-days,
-  .body.busy .area-slots,
-  .body.busy .area-preview {
+  .body.busy .area-slots {
     opacity: 0.45;
     pointer-events: none;
     user-select: none;
@@ -996,14 +995,31 @@ export const cardStyles = css`
   .detail {
     margin: 10px 0 0;
     font-size: 0.85rem;
+    line-height: 1.3;
     color: var(--etp-text);
     min-height: 1.3em;
+  }
+  /* one slot per line next to the day; room for the longest day so hovering does not resize the card */
+  div.detail {
+    display: flex;
+    align-items: flex-start;
+    min-height: calc(var(--detail-lines, 1) * 1.3em);
+  }
+  .detail-slots {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .detail-slots li {
+    white-space: pre;
   }
   .detail.error {
     color: var(--etp-error);
   }
   .detail-day {
     display: inline-block;
+    flex: none;
     min-width: 2em;
     color: var(--etp-accent);
     font-weight: 600;
