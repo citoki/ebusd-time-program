@@ -23,7 +23,7 @@ A Home Assistant dashboard card to view and edit the weekly time programs of a V
 
 | Editing on a phone | Preview mode |
 |:---:|:---:|
-| <img src="docs/assets/edit-narrow.webp" width="300" alt="Narrow layout"> | <img src="docs/assets/preview-narrow.webp" width="300" alt="Preview mode"> |
+| <img src="docs/assets/edit-narrow.webp" width="300" alt="Narrow layout"> | <img src="docs/assets/preview-narrow.webp" width="300" alt="Preview mode"> <img src="docs/assets/preview-narrow-saunier.webp" width="300" alt="Preview mode small"> |
 
 ## Requirements
 
