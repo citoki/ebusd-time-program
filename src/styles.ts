@@ -229,10 +229,9 @@ export const cardStyles = css`
   .section {
     padding: 12px 16px;
   }
-  /* locked while writing; the areas are also inert */
+  /* locked while writing; the areas are also inert (the preview stays clear: it shows the days as they are written) */
   .body.busy .area-days,
-  .body.busy .area-slots,
-  .body.busy .area-preview {
+  .body.busy .area-slots {
     opacity: 0.45;
     pointer-events: none;
     user-select: none;

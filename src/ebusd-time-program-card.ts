@@ -31,6 +31,7 @@ import {
 } from "./model/week.js";
 import { version } from "../package.json";
 import previewImage from "../assets/card-preview.webp?inline";
+import { heldDays, programKey, stableRead } from "./held-days.js";
 import { cardStyles } from "./styles.js";
 import { restoreItems, retryItems, WriteJob, type JobKind, type JobSnapshot } from "./write-job.js";
 
@@ -130,6 +131,7 @@ export class EbusdTimeProgramCard extends LitElement {
   private _clock: ReturnType<typeof setInterval> | undefined;
   /** Service sources (`vaillant_ebus`, `arotherm_genia_ebusd`): unsubscribe from the shared program reads. */
   private _unsubscribe: (() => void) | undefined;
+  private _unsubscribeHeld: (() => void) | undefined;
   /** Rendered as a thumbnail in HA's "Add card" dialog: show a picture instead of live data. */
   private _inPicker = false;
 
@@ -165,6 +167,7 @@ export class EbusdTimeProgramCard extends LitElement {
     this._job = null;
     this._keptPrevious = null;
     this._fingerprint = "";
+    this._reads = []; // programs may differ: no "last value" from the old config
     this._loadService();
     this._refresh();
     this.dataset.theme = this._cfg.theme;
@@ -190,6 +193,7 @@ export class EbusdTimeProgramCard extends LitElement {
       this._loadService();
     }, 60_000);
     this._unsubscribe = serviceStore.subscribe(() => this._refresh());
+    this._unsubscribeHeld = heldDays.subscribe(() => this._refresh());
     this._loadService();
   }
 
@@ -200,6 +204,8 @@ export class EbusdTimeProgramCard extends LitElement {
     clearInterval(this._clock);
     this._unsubscribe?.();
     this._unsubscribe = undefined;
+    this._unsubscribeHeld?.();
+    this._unsubscribeHeld = undefined;
   }
 
   private get _busy(): boolean {
@@ -261,10 +267,17 @@ export class EbusdTimeProgramCard extends LitElement {
     const programs = service
       ? `service:${serviceStore.version}`
       : cfg.programs.map((p) => programFingerprint(hass, cfg, p.spec)).join("#");
-    const fp = programs + `#${entities.join("|")}#${setback.join("|")}`;
+    const fp = programs + `#${entities.join("|")}#${setback.join("|")}#held:${heldDays.version}`;
     if (fp === this._fingerprint) return;
     this._fingerprint = fp;
-    this._reads = cfg.programs.map((p) => (service ? serviceStore.get(cfg, p.spec) : readProgram(hass, cfg, p.spec)));
+    // days being written keep their old value until read back; briefly unreadable days their last one
+    this._reads = cfg.programs.map((p, i) =>
+      stableRead(
+        service ? serviceStore.get(cfg, p.spec) : readProgram(hass, cfg, p.spec),
+        heldDays.get(programKey(cfg, p.spec)),
+        this._reads[i]?.days,
+      ),
+    );
     this._setbackTargets = cfg.programs.map((p, i) => {
       const write = setbackWrite(cfg, p, entities[i]!);
       // without MQTT, only a number entity (e.g. the integration's own) can be written
@@ -467,6 +480,19 @@ export class EbusdTimeProgramCard extends LitElement {
     const service = isServiceSource(cfg.source);
     this._sheet = null;
     this._notice = null;
+    // all cards on the page keep showing these days as they are until each is written and read back
+    const key = programKey(cfg, spec);
+    const before = this._reads[program]?.days;
+    const hold = (snapshot: JobSnapshot) => {
+      const days: Partial<Record<Day, Slot[]>> = {};
+      if (snapshot.status === "running") {
+        for (const item of snapshot.items) {
+          const old = before?.[item.day];
+          if (old && (item.state === "queued" || item.state === "writing" || item.state === "verifying")) days[item.day] = old;
+        }
+      }
+      heldDays.set(Object.keys(days).length ? key : null, days);
+    };
     const runner = new WriteJob(
       { kind, program, items, previous },
       { cfg, spec, countMessage, verifyTimeoutMs: cfg.verifyTimeout * 1000 },
@@ -493,11 +519,16 @@ export class EbusdTimeProgramCard extends LitElement {
           }),
         now: () => Date.now(),
       },
-      (snapshot) => (this._job = snapshot),
+      (snapshot) => {
+        this._job = snapshot;
+        hold(snapshot);
+      },
     );
     this._runner = runner;
     this._job = runner.snapshot;
+    hold(runner.snapshot);
     const result = await runner.run().finally(() => {
+      heldDays.set(null);
       if (pageJobOwner === this) pageJobOwner = null;
     });
     this._runner = null;
