@@ -17,7 +17,8 @@ import { applyHaTheme, mountSettingsBar } from "./settings-bar.js";
 //   state=startup|weekend|slot|offline|nohwc   start in a sensor-state scenario (toolbar on the page)
 //   programs=z1,z2,hwc   programs to show (the fake system has no Z2/Z3 sensors)
 //   lang=de|fr|en-GB|…   card language (default: hass.language = en)
-//   mode=preview  stacked=1   read-only preview card (stacked: all programs, no tabs)
+//   mode=preview  stacked=1   read-only preview card (stacked: all programs, no tabs);
+//                        without mode=preview a preview card is shown next to the edit cards
 //   labels=always|never  temperatures inside the bars (preview mode, default auto)
 //   range=today|today_tomorrow  preview rows (default week)   nolabel=1  hide the detail line
 //   layout=wide|narrow   force a layout (default auto)
@@ -81,9 +82,22 @@ ebusd.publish = (topic, payload) => {
   return publish(topic, payload);
 };
 
-for (const id of ["narrow", "wide"]) {
+// Edit mode: also show a preview card next to the edit cards (same fake controller, so writes show up there).
+const withPreview = config.mode !== "preview";
+const configFor = (id: string): CardConfig => (id === "preview" ? { ...config, mode: "preview" } : { ...config });
+if (withPreview) {
+  const frame = document.createElement("div");
+  frame.className = "frame";
+  frame.id = "preview";
+  frame.innerHTML = "<h1>Preview (400 px)</h1>";
+  document.body.append(frame);
+}
+
+const frameIds = withPreview ? ["narrow", "wide", "preview"] : ["narrow", "wide"];
+for (const id of frameIds) {
   const card = document.createElement("ebusd-time-program-card");
-  card.setConfig(config);
+  card.dataset.frame = id;
+  card.setConfig(configFor(id));
   card.hass = hassFor(ebusd.hass());
   cards.push(card);
   document.getElementById(id)!.append(card);
@@ -107,5 +121,5 @@ for (const id of ["narrow", "wide"]) {
 }
 
 mountScenarioBar(ebusd, resolveConfig(config), params.get("state"));
-// language / theme selectors: re-apply the config to both cards (resets their selection)
-mountSettingsBar(config, () => cards.forEach((card) => card.setConfig({ ...config })));
+// language / theme selectors: re-apply the config to all cards (resets their selection)
+mountSettingsBar(config, () => cards.forEach((card) => card.setConfig(configFor(card.dataset.frame!))));

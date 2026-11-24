@@ -71,13 +71,14 @@ export function renderWeekPreview(p: WeekPreviewProps): TemplateResult {
             @click=${interactive && p.detail !== undefined ? () => onDay(d) : nothing}
             @mouseenter=${hover ? () => hover(d) : nothing}
           >
-            ${isPending ? (p.saved?.[d] ?? []).map((s) => renderSegment(s, spec, false, "saved")) : nothing}
-            ${(slots ?? []).map((s) =>
+            ${isPending ? (p.saved?.[d] ?? []).map((s, _i, all) => renderSegment(s, spec, false, "saved", adjoins(s, all))) : nothing}
+            ${(slots ?? []).map((s, _i, all) =>
               renderSegment(
                 s,
                 spec,
                 p.labels ?? false,
                 isPending && p.saved?.[d] && !p.saved[d]!.some((b) => sameSlot(s, b)) ? "changed" : "",
+                adjoins(s, all),
               ),
             )}
             ${isToday ? html`<span class="now" style="left:${(p.now!.minutes / MINUTES_PER_DAY) * 100}%" title=${UI.now}></span>` : nothing}
@@ -88,18 +89,36 @@ export function renderWeekPreview(p: WeekPreviewProps): TemplateResult {
     ${p.alert
       ? html`<p class="detail error" role="alert">${p.alert}</p>`
       : p.detail && p.showDetail !== false
-        ? html`<p class="detail" aria-live="polite">
+        ? html`<div
+            class="detail"
+            aria-live="polite"
+            style="--detail-lines:${Math.max(1, ...(p.rows ?? DAYS).map((d) => days[d]?.length ?? 1))}"
+          >
             <span class="detail-day">${UI.dayShort[p.detail]}</span>
-            ${detailText(days[p.detail], spec, p.detailTemps ?? true)}
-          </p>`
+            <ul class="detail-slots">
+              ${detailLines(days[p.detail], spec, p.detailTemps ?? true).map((l) => html`<li>${l}</li>`)}
+            </ul>
+          </div>`
         : nothing}
   </div>`;
 }
 
+/** Another slot starts exactly where `slot` ends (e.g. only the temperature changes). */
+const adjoins = (slot: Slot, all: readonly Slot[]) => all.some((o) => o !== slot && o.start === slot.end);
+
 const sameSlot = (a: Slot, b: Slot) => a.start === b.start && a.end === b.end && a.temp === b.temp;
 
-/** `kind`: "saved" = controller value under a draft (faded), "changed" = draft slot not saved yet. */
-function renderSegment(slot: Slot, spec: ProgramSpec, labels: boolean, kind: "" | "saved" | "changed" = ""): TemplateResult {
+/**
+ * `kind`: "saved" = controller value under a draft (faded), "changed" = draft slot not saved yet.
+ * `gapAfter`: the next slot starts right at this one's end; leave 1px so the boundary stays visible.
+ */
+function renderSegment(
+  slot: Slot,
+  spec: ProgramSpec,
+  labels: boolean,
+  kind: "" | "saved" | "changed" = "",
+  gapAfter = false,
+): TemplateResult {
   const start = toMinutes(slot.start) ?? 0;
   const end = toMinutes(slot.end) ?? start;
   const left = (start / MINUTES_PER_DAY) * 100;
@@ -107,18 +126,19 @@ function renderSegment(slot: Slot, spec: ProgramSpec, labels: boolean, kind: "" 
   const width = Math.max(((end - start) / MINUTES_PER_DAY) * 100, 0.8);
   const label = `${slot.start}–${slot.end}${slot.temp !== undefined && spec.temp ? ` · ${formatTemp(slot.temp)} °C` : ""}`;
   const text = labels && spec.temp && slot.temp !== undefined && end - start >= LABEL_MIN_MINUTES ? shortTemp(slot.temp) : "";
-  return html`<span class="seg ${spec.temp ? "heat" : ""} ${kind}" style="left:${left}%;width:${width}%" title=${label}
+  return html`<span class="seg ${spec.temp ? "heat" : ""} ${kind}" style="left:${left}%;width:${gapAfter ? `calc(${width}% - 1px)` : `${width}%`}" title=${label}
     >${text}</span
   >`;
 }
 
-/** The detail line: `06:00–08:00 21.0 °C · 16:00–22:00 21.0 °C`. */
-function detailText(slots: Slot[] | null, spec: ProgramSpec, withTemp: boolean): string {
-  if (slots === null) return UI.loading;
-  if (slots.length === 0) return UI.offAllDay;
-  return slots
-    .map((s) => `${s.start}–${s.end}${withTemp && spec.temp && s.temp !== undefined ? ` ${formatTemp(s.temp)} °C` : ""}`)
-    .join(" · ");
+/**
+ * The detail lines, one slot each: `06:00–08:00  21.0 °C`.
+ * The block reserves room for the day with the most slots (`--detail-lines`), so hovering days does not resize the card.
+ */
+function detailLines(slots: Slot[] | null, spec: ProgramSpec, withTemp: boolean): string[] {
+  if (slots === null) return [UI.loading];
+  if (slots.length === 0) return [UI.offAllDay];
+  return slots.map((s) => `${s.start}–${s.end}${withTemp && spec.temp && s.temp !== undefined ? `  ${formatTemp(s.temp)} °C` : ""}`);
 }
 
 function describe(day: Day, slots: Slot[] | null, spec: ProgramSpec): string {
